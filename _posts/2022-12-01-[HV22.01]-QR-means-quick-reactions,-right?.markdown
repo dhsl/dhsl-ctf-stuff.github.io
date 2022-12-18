@@ -1,0 +1,34 @@
+---
+layout: single
+title: "[HV22.01] QR means quick reactions, right?"
+date: 2022-12-01 08:50:34 +0100
+categories: HV22 CTF fun easy
+---
+
+So, we got a .gif file showing lot's of QR codes. The challenge is to split them frame by frame and read the codes, which is pretty straightforward.
+
+Here is the file: ![Source .gif](/assets/hv22_01_gif.gif)
+
+I used PIL to open the image file and split it into frames and
+
+```python
+from PIL import Image
+from pyzbar.pyzbar import decode
+
+im = Image.open('./hv22_01_gif.gif')
+i = 0
+result = ''
+
+try:
+    while 1:
+        im.seek(i) # seeks to the next frame
+        imframe = im.copy() # creates a copy of the frame
+        decoded = decode(imframe) # uses pyzbar decoder
+        result += decoded[0].data.decode('utf-8') # adds the decoded value to the result string
+        i += 1
+except EOFError:
+    print(result)
+    pass
+```
+
+This returns the flag **HV22{I_CaN_HaZ_Al_T3h_QRs_Plz}**
