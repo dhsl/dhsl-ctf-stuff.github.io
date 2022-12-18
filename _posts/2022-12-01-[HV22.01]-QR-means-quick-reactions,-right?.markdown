@@ -7,7 +7,7 @@ categories: HV22 CTF fun easy
 
 So, we got a .gif file showing lot's of QR codes. The challenge is to split them frame by frame and read the codes, which is pretty straightforward.
 
-Here is the file: ![Source .gif](/assets/hv22_01_gif.gif)
+Here is the file: ![source animated gif containing a bunch of QR codes](/assets/hv22_01_gif.gif)
 
 I used PIL to open the image file and split it into frames and
 
