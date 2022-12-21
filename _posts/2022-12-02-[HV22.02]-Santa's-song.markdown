@@ -35,6 +35,6 @@ Afterwards, I remembered a musical notation in numbers (see [Numbered musical no
 
 After a while, I was so annoyed that I installed the tool the challenge author used to create this notes (see [MuseScore](https://musescore.org/en)) to see if this gives me any clues. I rebuilt the page from scratch and listened to it. When I hovered the first note, I noticed that is was a B instead of an H as I would have identified it (see [Letter notation](https://en.wikipedia.org/wiki/Letter_notation)). When I hovered all the notes, I noticed that they were all in the hexadecimal range of characters.
 
-This lead me to write down all the letters (BAE FACED A BAD DEED), which couldn't be a coincidence. Putting that into the website didn't work, so I opened up [Cyberchef](https://cyberchef.org) to play around with it. Turns out, decode it from Base16 results in 13470175147275968237, which, entered in the website, reveals the flag **HV22{13..s0me_numb3rs..37}**.
+This lead me to write down all the letters (BAE FACED A BAD DEED), which couldn't be a coincidence. Putting that into the website didn't work, so I opened up [Cyberchef](https://cyberchef.org) to play around with it. Turns out, decode it from Base16 results in 13470175147275968237, which, entered in the website, reveals the flag **HV22{13..s0me_numb3rs..37}**
 
 Although the last part was a bit guessy, I enjoyed the challenge.

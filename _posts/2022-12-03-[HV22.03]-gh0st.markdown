@@ -1,0 +1,47 @@
+---
+title: "[HV22.03] gh0st"
+date: 2022-12-03 00:39:00 +0100
+categories: HV22 CTF fun crypto easy python
+---
+
+# Description
+
+The elves found this Python script that Rudolph wrote for Santa, but it's behaving very strangely. It shouldn't even run at all, and yet it does! It's like there's some kind of ghost in the script! Can you figure out what's going on and recover the flag?
+
+# Solution
+
+The file ([gh0st.py](/assets/hv22/hv22_03_gh0st.py)) is a bit messed up, since in the song, there are lots of 0x00 bytes which do stuff I didn't really understand to the code / python in general.
+
+To solve it, I simply commented out the random sys.exit() in the first place.
+
+```python
+# only one in a million shall pass
+#if random.randrange(1000000):
+#   sys.exit()
+```
+
+Then I saw ther is some logic which XORs specific locations of the weird song to see if the flag is correct. The variable _flag_ is the user input. So we either have to brute force it to get to the _Congrats!_ message, but this would take way too much time, knowing that the flag is rather long from the length of the _correct[]_.
+
+```python
+for i,c in enumerate(flag):
+    flag[i] ^= ord(song[i*10 % len(song)])
+
+if all([c == f for c,f in zip(correct, flag)]):
+    print('''Congrats!''')
+else:
+    print('''Try again!''')
+```
+
+Since XOR is a reversible operation, I chose to simply XOR it the other way round like this:
+
+```python
+result = ''
+for i, c in enumerate(correct):
+    result += chr(ord(song[i*10 % len(song)]) ^c)
+
+print(result)
+```
+
+This returns the flag **HV22{nUll_bytes_st0mp_cPy7h0n}**
+
+Even though I still don't understand what the 0x00 bytes are doing, besides messing up pythons error message positions and breaking the program when removed, I liked this challenge and was able to solve it quite fast / ~39 minutes after reveal.
