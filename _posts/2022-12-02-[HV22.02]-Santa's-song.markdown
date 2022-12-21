@@ -1,0 +1,40 @@
+---
+title: "[HV22.02] Santa's song"
+date: 2022-12-02 08:28:00 +0100
+categories: HV22 CTF fun easy music
+---
+
+# Description
+
+Santa has always wanted to compose a song for his elves to cherish their hard work. Additionally, he set up a vault with a secret access code only he knows!
+
+The elves say that Santa has always liked to hide secret messages in his work and they think that the vaults combination number may be hidden in the magnum opus of his.
+
+What are you waiting for? Go on, help the elves!
+
+# Hints
+
+1. Keep in mind that you are given a web service, not a play button for a song.
+2. As stated in the description, Santa's vault accepts a number, not text.
+
+# Solution
+
+## Observations
+
+Today, we were given a web service (which is not to be exploited): ![screenshot of the website](/assets/hv22/hv22_02_website.png)
+
+On the website, a .pdf file was given to us, showing some notes of a song **Santa and his elves** to us. ![song: santa and his elves](/assets/hv22/hv22_02_song.pdf)
+
+## Wrong paths
+
+First, I inspected the .pdf file with usual tools like file, stings, binwalk etc, just to find that there is nothing unusual. I also inspected the font files to look for some unusual glyphs, but nothing was out of the ordinary.
+
+Afterwards, I remembered a musical notation in numbers (see [Numbered musical notation](https://en.wikipedia.org/wiki/Numbered_musical_notation)), which is not uncomon in some parts of the world, but that was a dead end.
+
+## Right path
+
+After a while, I was so annoyed that I installed the tool the challenge author used to create this notes (see [MuseScore](https://musescore.org/en)) to see if this gives me any clues. I rebuilt the page from scratch and listened to it. When I hovered the first note, I noticed that is was a B instead of an H as I would have identified it (see [Letter notation](https://en.wikipedia.org/wiki/Letter_notation)). When I hovered all the notes, I noticed that they were all in the hexadecimal range of characters.
+
+This lead me to write down all the letters (BAE FACED A BAD DEED), which couldn't be a coincidence. Putting that into the website didn't work, so I opened up [Cyberchef](https://cyberchef.org) to play around with it. Turns out, decode it from Base16 results in 13470175147275968237, which, entered in the website, reveals the flag **HV22{13..s0me_numb3rs..37}**.
+
+Although the last part was a bit guessy, I enjoyed the challenge.

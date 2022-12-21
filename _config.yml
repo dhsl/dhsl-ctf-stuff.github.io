@@ -19,6 +19,8 @@
 # in the templates via {{ site.myvariable }}.
 
 title: dhsl's small blog
+subtitle: some ctf stuff
+repository: "dhsl/dhsl.github.io"
 email: dhsl+githubpages@is-bored.de
 description: >- # this means to ignore newlines until "baseurl:"
   Write an awesome description for your new site here. You can edit this
@@ -29,8 +31,29 @@ url: "https://dhsl.github.io" # the base hostname & protocol for your site, e.g.
 twitter_username: ""
 github_username: dhsl
 
+defaults:
+  # _posts
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: single
+      author_profile: true
+      read_time: true
+      comments: false
+      share: false
+      related: false
+      show_date: true
+
+author:
+  name: "Daniel Henschel"
+  avatar: "/assets/images/bio-photo.jpg"
+  bio: "My awesome biography constrained to a sentence or two goes here."
+  location: "Somewhere, USA"
+
 # Build settings
 remote_theme: "mmistakes/minimal-mistakes@4.24.0"
+minimal_mistakes_skin: "dirt" # "air", "aqua", "contrast", "dark", "default", "dirt", "neon", "mint", "plum", "sunrise"
 plugins:
   - jekyll_feed
   - jekyll-include-cache
