@@ -1,6 +1,6 @@
 ---
 title: "[HV22.01] QR means quick reactions, right?"
-date: 2022-12-01 08:50:00 +0100
+date: 2022-12-01 08:50:34 +0100
 categories: HV22 CTF fun easy qr
 ---
 

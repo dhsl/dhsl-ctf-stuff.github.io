@@ -1,6 +1,6 @@
 ---
 title: "[HV22.04] Santa's radians"
-date: 2022-12-04 02:17:00 +0100
+date: 2022-12-04 02:17:14 +0100
 categories: HV22 CTF fun easy python
 ---
 

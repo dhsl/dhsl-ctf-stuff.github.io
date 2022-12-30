@@ -1,6 +1,6 @@
 ---
 title: "[HV22.03] gh0st"
-date: 2022-12-03 00:39:00 +0100
+date: 2022-12-03 00:39:19 +0100
 categories: HV22 CTF fun crypto easy python
 ---
 
