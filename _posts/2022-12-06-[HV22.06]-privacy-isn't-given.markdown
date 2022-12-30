@@ -1,0 +1,94 @@
+---
+title: "[HV22.06] privacy isn't given"
+date: 2022-12-06 10:20:53 +0100
+categories: HV22 CTF exploitation easy python web3
+---
+
+# Description
+
+As every good IT person, Santa doesn't have all his backups at one place. Instead, he spread them all over the world.
+With this new blockchain unstoppable technology emerging (except Solana, this chain stops all the time) he tries to use it as another backup space. To test the feasibility, he only uploaded one single flag. Fortunately for you, he doesn't understand how blockchains work.
+
+Can you recover the flag?
+
+## Information:
+
+Start the Docker in the Resources section. You will be able to connect to a newly created Blockchain. Use the following information to interact with the challenge.
+
+Wallet public key `0x28a8746e75304c0780e011bed21c72cd78cd535e`
+Wallet private key `0xa453611d9419d0e56f499079478fd72c37b251a94bfde4d19872c44cf65386e3`
+Contract address: `0xe78A0F7E598Cc8b0Bb87894B0F60dD2a88d6a8Ab`
+
+The source code of the contract is the following block of code:
+
+```
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.9;
+
+contract NotSoPrivate {
+    address private owner;
+    string private flag;
+
+    constructor(string memory _flag) {
+        flag = _flag;
+        owner = msg.sender;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner);
+        _;
+    }
+
+    function setFlag(string calldata _flag) external onlyOwner {
+        flag = _flag;
+    }
+}
+```
+
+# Solution
+
+This is my first web3 challenge / experience at all, so I had to research a lot. Using Web3py seemed like the obvious way of interacting with that chain. I knew that on blockchains, everything is public. Learning a bit about interacting with the chain and experimenting, I wrote the following script to get all blocks and print their transactions if there are some:
+
+```python
+#!/usr/bin/env pytho3.10
+from web3 import Web3
+
+host = '4770d3d2-62bf-4d62-a943-00b96930dada.rdocker.vuln.land'
+w3 = Web3(Web3.HTTPProvider(f'http://{host}:8545'))
+
+block = w3.eth.get_block('latest')
+while (block.parentHash):
+    try:
+        block = w3.eth.get_block(block.parentHash)
+    except:
+        break
+    for transaction in block.transactions:
+        print(transaction)
+```
+
+There is only one transaction, so I modified my code to get that transaction and try to make sense of the input which was given there. Using the following code, it prints out a big chunk of data from the transaction, but luckily, it also holds the flag:
+
+```python
+#!/usr/bin/env pytho3.10
+from web3 import Web3
+
+host = 'a3fc531b-a1a7-4681-a677-631490d6f5ff.rdocker.vuln.land'
+w3 = Web3(Web3.HTTPProvider(f'http://{host}:8545'))
+
+block = w3.eth.get_block('latest')
+while True:
+    try:
+        block = w3.eth.get_block(block.parentHash)
+    except:
+        break
+    for transactionId in block.transactions:
+        transaction = w3.eth.get_transaction(transactionId)
+        input = bytes.fromhex(transaction["input"][2:])  # strip 0x prefix
+        print(input)
+```
+
+The result looks like this: ![output of the above program, showing the flag](/assets/hv22/hv22_06_input.png)
+
+The flag is **HV22{Ch41nS_ar3_Publ1C}**
+
+I think to know there are some tools to reveal the whole input, but for me this was sufficient to get to the flag. I learned something about blockchains and how to interact with them from python. Others have solved it using metamask and remix, but I was not able to figure out these tools properly.
