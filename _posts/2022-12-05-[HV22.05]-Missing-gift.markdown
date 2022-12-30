@@ -1,0 +1,32 @@
+---
+title: "[HV22.05] Missing gift"
+date: 2022-12-05 07:04:16 +0100
+categories: HV22 CTF network fun forensic easy python
+---
+
+# Description
+
+Like every year the elves were busy all year long making the best toys in Santas workshop. This year they tried some new fabrication technology. They had fun using their new machine, but it turns out that the last gift is missing.
+
+Unfortunately, Alabaster who was in charge of making this gift is not around, because he had to go and fulfill his scout elf duty as an elf on the shelf.
+
+But due to some very lucky circumstances the IT-guy elf was capturing the network traffic during this exact same time.
+
+## Goal:
+
+Can you help Santa and the elves to fabricate this toy and find the secret message?
+
+# Solution
+
+We got a network traffic dump ([tcpdump.pcap](/assets/hv22/hv22_05_tcpdump.pcap)) in a default format which can be opened with various tool. I like to use wireshark for that, since it is the industry default and brings plenty of protocol analyzers.
+
+Searching for `HV22` is the first obvious thing to do in such a file, which resulted in showing a filename `hv22.gcode`.
+![picture of protocol analyzer in wireshark, showing hv22.gcode filename](/assets/hv22/hv22_05_filename.png)
+
+Following the HTTP stream of this, I noticed a few things, but most importantly, the hv22.gcode content was also in it. .gcode is a data format which is used in CNC machining and 3D printing to send basic instructions to the machine like 'turn on heatbed', 'heat up to x degrees', 'move printerhead to pos X / Y' and so on. Of course, this is done by tools (called slicers), which ingest a 3D model and convert it into slices and then into commands.
+
+![screenshot from the follow http stream function in wireshark, showing the beginning of the gcode file](/assets/hv22/hv22_05_gcode.png)
+
+Not having a 3D printer around and also not knowing what the print would look like (or even if this is a valid print and compatible with the printer at all), I wondered if there are tools to do the opposite and found [GCode Viewer](https://gcode.ws) quite fast. I saved the gcode content in a file [hv22.gcode](/assets/hv22/hv22_05_hv22.gcode) and threw it at the GCode Viewer. Set to 3D it reveals the result ![picture of the 3D model used to create the gcode, showing the flag](/assets/hv22/hv22_05_gcode_analyzer.png)
+
+The flag is **HV22{this-is-a-w4ste-of-pl4stic}**
