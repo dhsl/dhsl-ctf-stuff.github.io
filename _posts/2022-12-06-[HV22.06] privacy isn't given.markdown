@@ -4,8 +4,6 @@ date: 2022-12-06 10:20:53 +0100
 categories: HV22 CTF exploitation easy python web3
 ---
 
-# Description
-
 As every good IT person, Santa doesn't have all his backups at one place. Instead, he spread them all over the world.
 With this new blockchain unstoppable technology emerging (except Solana, this chain stops all the time) he tries to use it as another backup space. To test the feasibility, he only uploaded one single flag. Fortunately for you, he doesn't understand how blockchains work.
 

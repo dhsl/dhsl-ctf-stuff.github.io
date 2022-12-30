@@ -4,8 +4,6 @@ date: 2022-12-01 08:50:34 +0100
 categories: HV22 CTF fun easy python qr
 ---
 
-# Description
-
 Santa's brother Father Musk just bought out a new decoration factory. He sacked all the developers and tried making his own QR code generator but something seems off with it. Can you try and see what he's done wrong?
 
 # Solution

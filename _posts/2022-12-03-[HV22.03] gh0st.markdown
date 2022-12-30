@@ -4,8 +4,6 @@ date: 2022-12-03 00:39:19 +0100
 categories: HV22 CTF fun crypto easy python
 ---
 
-# Description
-
 The elves found this Python script that Rudolph wrote for Santa, but it's behaving very strangely. It shouldn't even run at all, and yet it does! It's like there's some kind of ghost in the script! Can you figure out what's going on and recover the flag?
 
 # Solution

@@ -4,8 +4,6 @@ date: 2022-12-02 08:28:02 +0100
 categories: HV22 CTF fun easy music
 ---
 
-# Description
-
 Santa has always wanted to compose a song for his elves to cherish their hard work. Additionally, he set up a vault with a secret access code only he knows!
 
 The elves say that Santa has always liked to hide secret messages in his work and they think that the vaults combination number may be hidden in the magnum opus of his.

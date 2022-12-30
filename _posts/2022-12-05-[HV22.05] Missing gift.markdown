@@ -4,8 +4,6 @@ date: 2022-12-05 07:04:16 +0100
 categories: HV22 CTF network fun forensic easy
 ---
 
-# Description
-
 Like every year the elves were busy all year long making the best toys in Santas workshop. This year they tried some new fabrication technology. They had fun using their new machine, but it turns out that the last gift is missing.
 
 Unfortunately, Alabaster who was in charge of making this gift is not around, because he had to go and fulfill his scout elf duty as an elf on the shelf.
