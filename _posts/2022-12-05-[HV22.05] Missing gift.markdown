@@ -1,7 +1,7 @@
 ---
 title: "[HV22.05] Missing gift"
 date: 2022-12-05 07:04:16 +0100
-categories: HV22 CTF network fun forensic easy python
+categories: HV22 CTF network fun forensic easy
 ---
 
 # Description
