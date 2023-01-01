@@ -12,7 +12,7 @@ A user by the name of HACKventSanta may be spreading viruses. But Santa would ne
 
 This challenge gave us a name and an image. Since it's open source intelligence from classification, I analyzed the image and looked for the usual things like strings, binwalk, exiftool and stegsolve, but it revealed nothing.
 
-Next up was simply using a search engine for the name. Fotunately, in my case, DuckDuckGo immediately found an LinkedIn account. Now it only finds an Instagram account, but both lead to the same github.com user.
+Next up was simply using a search engine for the name. Fotunately, in my case, DuckDuckGo immediately found an LinkedIn account. Now it only finds an Instagram account, but both lead to the same github.com user. Other users used tools like Sherlock to find the accounts.
 
 ![image of the linkedin profile showing github address](/assets/hv22/hv22_08_linkedin.png)
 
