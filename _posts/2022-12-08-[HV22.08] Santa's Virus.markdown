@@ -1,0 +1,49 @@
+---
+title: "[HV22.08] Santa's Virus"
+date: 2022-12-08 09:03:19 +0100
+categories: HV22 CTF osint medium
+---
+
+A user by the name of HACKventSanta may be spreading viruses. But Santa would never do that! The elves want you to find more information about this filthy impersonator.
+
+![image of hackventsanta](/assets/hv22/hv22_08_hackventsanta.jpg)
+
+# Solution
+
+This challenge gave us a name and an image. Since it's open source intelligence from classification, I analyzed the image and looked for the usual things like strings, binwalk, exiftool and stegsolve, but it revealed nothing.
+
+Next up was simply using a search engine for the name. Fotunately, in my case, DuckDuckGo immediately found an LinkedIn account. Now it only finds an Instagram account, but both lead to the same github.com user.
+
+![image of the linkedin profile showing github address](/assets/hv22/hv22_08_linkedin.png)
+
+The only public repository (called FILES) has a rather empty [README.md](/assets/hv22/hv22_08_README.md) and a [files.zip](/assets/hv22/hv22_08_files.zip) to offer, so I downloaded the files.zip and inspected it. It was rather boring (nothing hidden in it), just a simple [index.html](/assets/hv22/hv22_08_index.html) with a message `No viruses alive here 🤔 cant say anything about tags`.
+
+Back to the repository, I noticed that there is 1 tag, and given the obvious hint, I looked into that.
+
+![image of the repository on github](/assets/hv22/hv22_08_repo.png)
+
+The tag TAG shows an additional asset called [Undetected](/assets/hv22/hv22_08_undetected), which seems suspicious. I downloaded it and inspected it.
+
+![image of the tag](/assets/hv22/hv22_08_undetected.png)
+
+The file is an ELF 64-bit executable and reveals some interesting strings without letting it run.
+
+![image of found strings](/assets/hv22/hv22_08_strings.png)
+
+This hints to checking known virus databases for the file. And bingo, virustotal of course knows the file:
+
+![overview from virustotal](/assets/hv22/hv22_08_virustotal.png)
+
+Scanning through the different sections of virustotal, I noticed that it had been uploaded with a few different names before:
+
+![different names of the file](/assets/hv22/hv22_08_names.png)
+
+The fake flag wasn't there when I originally solved the challenge, so I first went with the hint towards the twitter account @SwissSanta2022. It posted 3 QR codes. First one was (had to be) a rick roll. Second was a valid christimas song, third one finally was a link to a [google drive which asks for a password](https://drive.google.com/file/d/11pKYrcwr7Hf1eSUq8twtN5aMK-oziPE4/view).
+
+![qr code linking to google drive](/assets/hv22/hv22_08_qr.png)
+
+There was another interesting thing inside the strings we found in the file, so I tried using `ThisIsTheKeyToReceiveTheGiftFromSanta` as the key, which opened a file called [SANTAAAAAAAA.pdf](/assets/hv22/hv22_08_SANTAAAAAAAA.pdf).
+
+![content of SANTAAAAAAAA.pdf](/assets/hv22/hv22_08_pdf.png)
+
+The string `SFYyMntIT0hPK1NBTlRBK0dJVkVTK0ZMQUdTK05PVCtWSVJVU30=` in the top looks like base64 (due to the padding with `=`), so I fired up cyberchef to test that theory, which got rewarded with the flag **HV22{HOHO+SANTA+GIVES+FLAGS+NOT+VIRUS}**
