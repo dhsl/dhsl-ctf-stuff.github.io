@@ -1,0 +1,29 @@
+---
+title: "[HV22.07] St. Nicholas's animation"
+date: 2022-12-07 07:01:25 +0100
+categories: HV22 CTF fun easy qr
+---
+
+Santa has found a weird device called an "Oxocard Blockly", which seems to display a sequence of images. He believes it has got something to do with a QR code, but it doesn't seem complete...
+
+You can't fly to the north pole, so Santa sent you a video of the device in action.
+
+The elves are having a karaoke and left with in a hurry while singing into their micro. This means that they aren't there to help him, so now is your chance to make a good impression and find the flag!
+
+# Solution
+
+We got a video with a tool which seems to be capable of showing 8x8 pixels. It blinks and shows different images. This is the video: ![video](/assets/hv22/hv22_07_recording.mp4)
+
+Starting at ~4s it shows a pattern, where it starts top left, then top right, bottom left and finally bottom right.
+
+After that, it shows something like a QR position marker followed by three seemingly random pixel patterns before returning to animated things.
+
+My first intention was to head over to [QRazyBox](https://merricx.github.io/qrazybox/), but unfortunately, this only supports QR codes starting from 21x21 px and not Micro QR, what we are looking at most probably.
+
+Micro QR has the timing information laid out around the top and left edge (assuming standard orientation, where the position marker is at top left). Using this knowledge, I simply used QRazyBox by chosing a random empty area to copy the pixels from the video. Others have done that using a graphics program of their choice by painting individual pixels.
+
+[created Micro QR code](/assets/hv22/hv22_07_qr.png)
+
+I then used my phone to scan the QR code, but it's also completely possible to solve it using a micro qr code reader which can be found online.
+
+The flag was **HV22{b0f}**
