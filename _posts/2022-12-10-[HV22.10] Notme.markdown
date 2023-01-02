@@ -1,0 +1,43 @@
+---
+title: "[HV22.10] Notme"
+date: 2022-12-10 11:10:24 +0100
+categories: HV22 CTF web medium
+---
+
+Santa brings you another free gift! We are happy to announce a free note taking webapp for everybody. No account name restriction, no filtering, no restrictions and the most important thing: no bugs! Because it cannot be hacked, Santa decided to name it Notme = Not me you can hack!
+
+Or can you?
+
+# Solution
+
+We got a website giving us the opportunity to create an account, log in and create some notes. Since we want to get a flag, the initial assumption is that there should be a user with a note containing the flag. The first obvious thing to do is to fire up some proxy (I used ZAP, but Burp is also a fine choice) to see what the website does to the API behind it and went to the website.
+
+![website](/assets/hv22/hv22_10_website.png)
+
+Then I created an account with a known password `a`.
+
+![registration](/assets/hv22/hv22_10_register.png)
+
+Looking around, I saw a function to change my password.
+
+![change password function](/assets/hv22/hv22_10_changepassword.png)
+
+When I looked at the API call there, I saw that it used the number of my user account and I wondered if I can give it any number. It also gave me back the user name, which is probably quite handy afterwards.
+
+![request](/assets/hv22/hv22_10_request.png)
+
+So I used the built in fuzzer of ZAP to brute force all account numbers from 0 to 10k and set the same known password `d`. Fortunately, there was no rate limiting or anything else and it only took a few seconds.
+
+![configuration of the fuzzer](/assets/hv22/hv22_10_fuzzer.png)
+
+Looking through the requests, I saw one 200 OK result.
+
+![results](/assets/hv22/hv22_10_200ok.png)
+
+Of course it was 1337...
+
+![response](/assets/hv22/hv22_10_response.png)
+
+Anyways. It shows me the user name (and I know the password), so I logged in using that user and got the flag **HV22{Sql1_is_An_0Ld_Cr4Ft}**
+
+I learned that the challenge was intended to be solved by SQL injection (as the flag remarks), which I would have attempted next (probably using sqlmap for start), if there wasn't such an obvious web security issue.
