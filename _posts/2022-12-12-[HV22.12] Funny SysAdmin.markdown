@@ -1,0 +1,30 @@
+---
+title: "[HV22.12] Funny SysAdmin"
+date: 2022-12-12 09:03:17 +0100
+categories: HV22 CTF linux medium
+---
+
+Santa wrote his first small script, to track the open gifts on the wishlist. However the script stopped working a couple of days ago and Santa has been stuck debugging the script. His sysadmin seems to be a bit funny ;)
+
+# Solution
+
+For this challenge we got a web shell to a linux box but were restricted to the user santa. Reading about restricted shell escape, I learned about `sudo` being able to not require a password for configured programs and that `sudo -l` can list your permissions in that. I noticed that `tcpdump` is among them and digged further. The most valuable resource was [this guide](https://insinuator.net/2019/07/how-to-break-out-of-restricted-shells-with-tcpdump/) on how to break out of restricted shells.
+
+![sudo permissions](/assets/hv22/hv22_12_sudo.png)
+
+To test the escape, I created a small script inside /home/santa, called hack.sh and gave it +x permissions:
+
+```bash
+#!/bin/bash
+whoami > /tmp/result
+```
+
+And I called it using the tcpdump technique from the resource above like this: `sudo tcpdump -nl -i eth0 -w /dev/null -W 1 -G 1 -z /home/santa/hack.sh -Z root`, resulting in this:
+
+![got root](/assets/hv22/hv22_12_whoami.png)
+
+This is promising! I then tried a few things like `ls -lah /` or `grep -R HV22 /`, but many of these commands were replaced by funny things (that's what the name is about!), so I finally did `chmod -R 777 /root` and searched the flag manually as santa:
+
+![got flag](/assets/hv22/hv22_12_flag.png)
+
+Flag is **HV22{M4k3-M3-a-S4ndW1ch}**
