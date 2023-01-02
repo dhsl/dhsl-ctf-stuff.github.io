@@ -1,0 +1,41 @@
+---
+title: "[HV22.13] Noty"
+date: 2022-12-13 12:36:39 +0100
+categories: HV22 CTF web medium
+---
+
+After the previous fiasco with multiple bugs in Notme (some intended and some not), Santa released a now truly secure note taking app for you. Introducing: Noty, a fixed version of Notme.
+
+Also Santa makes sure that this service runs on green energy. No pollution from this app ;)
+
+# Solution
+
+Oh, a follow up to HV22.10, very nice! Of course I looked at the previous path of altering a password for someone else, but unfortunately, this doesn't work out. So next thing is SQL injection. SQLmap didn't find anything, so I think that's not it, again.
+
+Back to the description, I wondered about the green energy and pollution notice. Since almost all of the challenges usually run in docker, I don't think there is a difference, so it has to be a hint. Googling for "web pollution security", I found prototype pollution quite fast and learned about this interesting technique. This article was my main source: [Prototype Pollution attack on NodeJS applications](https://itnext.io/prototype-pollution-attack-on-nodejs-applications-94a8582373e7)
+
+It looks like by messing with `__proto__`, I can deform python objects quite easily. So the challenge is basically to find out which attributes I have to modify in order to make it do what I want to do. The problem with this is, that whenever I break something else, the whole application is broken and I had to restart the docker container, register a new user and start again.
+
+To ease the pain, I found that Burp's proxy allows for interception, where I can simply use the browser to trigger the API, modify the request in Burp and then fire it to the API.
+
+After playing around a while, I found that the user object (GET /api/user/me) seems to have a field called "role", where my account is a "user". I wonder how this might turn out if I were "admin" instead.
+
+Using the intercept function, I altered the web request and modify the prototype like that:
+
+```http
+POST /api/register HTTP/2
+Host: 7395944f-b303-49a5-91f7-86823f301cbe.idocker.vuln.land
+[snipped]
+
+{
+    "username":"b",
+    "password":"b",
+    "__proto__": {
+        "role": "admin"
+    }
+}
+```
+
+This allows me to log in as the user `b` and reveals the flag **HV22{P0luT1on_1S_B4d_3vERyWhere}**
+
+![flag](/assets/hv22/hv22_13_flag.png)
