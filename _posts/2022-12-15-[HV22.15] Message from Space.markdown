@@ -1,7 +1,10 @@
 ---
 title: "[HV22.15] Message from Space"
 date: 2022-12-15 13:33:35 +0100
-categories: HV22 CTF wireless forensic hard signal analysis urh
+tags: HV22 CTF wireless forensic hard signal analysis urh
+categories: HV22 hard
+sidebar:
+  nav: "hv22"
 ---
 
 One of Santa's elves is a bit of a drunkard and he is incredibly annoyed by the banning of beer from soccer stadiums. He is therefore involved in the **"No Return to ZIro beer"** community that pledges for unrestricted access to hop brew during soccer games. The topic is sensitive and thus communication needs to be top secret, so the community members use a special quantum military-grade encryption radio system.

@@ -1,7 +1,10 @@
 ---
 title: "[HV22.14] Santa's Bank"
 date: 2022-12-14 22:24:31 +0100
-categories: HV22 CTF web medium xss xsrf cors
+tags: HV22 CTF web medium xss xsrf cors
+categories: HV22 medium
+sidebar:
+  nav: "hv22"
 ---
 
 Santa has lost faith and trust in humanity and decided to take matters in his own hands: He opens a new bank.

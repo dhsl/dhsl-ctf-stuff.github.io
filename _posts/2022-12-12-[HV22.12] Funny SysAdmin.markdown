@@ -1,7 +1,10 @@
 ---
 title: "[HV22.12] Funny SysAdmin"
 date: 2022-12-12 09:03:17 +0100
-categories: HV22 CTF linux medium
+tags: HV22 CTF linux medium shell escape
+categories: HV22 medium
+sidebar:
+  nav: "hv22"
 ---
 
 Santa wrote his first small script, to track the open gifts on the wishlist. However the script stopped working a couple of days ago and Santa has been stuck debugging the script. His sysadmin seems to be a bit funny ;)

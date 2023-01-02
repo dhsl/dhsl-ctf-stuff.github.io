@@ -1,7 +1,10 @@
 ---
 title: "[HV22.07] St. Nicholas's animation"
 date: 2022-12-07 07:01:25 +0100
-categories: HV22 CTF fun easy qr
+tags: HV22 CTF fun easy qr
+categories: HV22 easy
+sidebar:
+  nav: "hv22"
 ---
 
 Santa has found a weird device called an "Oxocard Blockly", which seems to display a sequence of images. He believes it has got something to do with a QR code, but it doesn't seem complete...

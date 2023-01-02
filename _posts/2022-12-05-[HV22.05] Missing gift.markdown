@@ -1,7 +1,10 @@
 ---
 title: "[HV22.05] Missing gift"
 date: 2022-12-05 07:04:16 +0100
-categories: HV22 CTF network fun forensic easy
+tags: HV22 CTF network fun forensic easy
+categories: HV22 easy
+sidebar:
+  nav: "hv22"
 ---
 
 Like every year the elves were busy all year long making the best toys in Santas workshop. This year they tried some new fabrication technology. They had fun using their new machine, but it turns out that the last gift is missing.

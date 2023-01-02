@@ -1,7 +1,10 @@
 ---
 title: "[HV22.16] Needle in a qrstack"
 date: 2022-12-16 19:14:38 +0100
-categories: HV22 CTF fun hard qr
+tags: HV22 CTF fun hard qr
+categories: HV22 hard
+sidebar:
+  nav: "hv22"
 ---
 
 Santa has lost his flag in a qrstack - it is really like finding a needle in a haystack.

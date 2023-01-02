@@ -1,7 +1,10 @@
 ---
 title: "[HV22.08] Santa's Virus"
 date: 2022-12-08 09:03:19 +0100
-categories: HV22 CTF osint medium
+tags: HV22 CTF osint medium
+categories: HV22 medium
+sidebar:
+  nav: "hv22"
 ---
 
 A user by the name of HACKventSanta may be spreading viruses. But Santa would never do that! The elves want you to find more information about this filthy impersonator.

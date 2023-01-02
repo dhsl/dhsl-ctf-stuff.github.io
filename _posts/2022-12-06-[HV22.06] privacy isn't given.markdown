@@ -1,7 +1,10 @@
 ---
 title: "[HV22.06] privacy isn't given"
 date: 2022-12-06 10:20:53 +0100
-categories: HV22 CTF exploitation easy python web3
+tags: HV22 CTF exploitation easy python web3
+categories: HV22 easy
+sidebar:
+  nav: "hv22"
 ---
 
 As every good IT person, Santa doesn't have all his backups at one place. Instead, he spread them all over the world.

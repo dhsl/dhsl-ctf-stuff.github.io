@@ -1,7 +1,10 @@
 ---
 title: "[HV22.02] Santa's song"
 date: 2022-12-02 08:28:02 +0100
-categories: HV22 CTF fun easy music
+tags: HV22 CTF fun easy music
+categories: HV22 easy
+sidebar:
+  nav: "hv22"
 ---
 
 Santa has always wanted to compose a song for his elves to cherish their hard work. Additionally, he set up a vault with a secret access code only he knows!

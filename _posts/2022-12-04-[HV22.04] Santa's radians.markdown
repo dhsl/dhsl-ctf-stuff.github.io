@@ -1,7 +1,10 @@
 ---
 title: "[HV22.04] Santa's radians"
 date: 2022-12-04 02:17:14 +0100
-categories: HV22 CTF fun easy python
+tags: HV22 CTF fun easy python
+categories: HV22 easy
+sidebar:
+  nav: "hv22"
 ---
 
 Santa, who is a passionate mathematician, has created a small website to train his animation coding skills. Although Santa lives in the north pole, where the **degrees** are very low, the website's animation luckily did not freeze. It just seems to move very slooowww. But how does this help...? The elves think there might be a flag in the application...

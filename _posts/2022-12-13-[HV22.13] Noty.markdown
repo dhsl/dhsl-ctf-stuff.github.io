@@ -1,7 +1,10 @@
 ---
 title: "[HV22.13] Noty"
 date: 2022-12-13 12:36:39 +0100
-categories: HV22 CTF web medium
+tags: HV22 CTF web medium prototype pollution
+categories: HV22 medium
+sidebar:
+  nav: "hv22"
 ---
 
 After the previous fiasco with multiple bugs in Notme (some intended and some not), Santa released a now truly secure note taking app for you. Introducing: Noty, a fixed version of Notme.

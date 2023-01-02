@@ -1,7 +1,10 @@
 ---
 title: "[HV22.09] Santa's Text"
 date: 2022-12-09 13:25:29 +0100
-categories: HV22 CTF penetration medium exploit reverse shell
+tags: HV22 CTF penetration medium exploit reverse shell
+categories: HV22 medium
+sidebar:
+  nav: "hv22"
 ---
 
 Santa recently created some Text with a 🐚, which is said to be vulnerable code. Santa has put this Text in his library, putting the library in danger. He doesn't know yet that this could pose a risk to his server. Can you backdoor the server and find all of Santa's secrets?

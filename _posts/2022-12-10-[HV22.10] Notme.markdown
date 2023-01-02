@@ -1,7 +1,10 @@
 ---
 title: "[HV22.10] Notme"
 date: 2022-12-10 11:10:24 +0100
-categories: HV22 CTF web medium
+tags: HV22 CTF web medium
+categories: HV22 medium
+sidebar:
+  nav: "hv22"
 ---
 
 Santa brings you another free gift! We are happy to announce a free note taking webapp for everybody. No account name restriction, no filtering, no restrictions and the most important thing: no bugs! Because it cannot be hacked, Santa decided to name it Notme = Not me you can hack!
