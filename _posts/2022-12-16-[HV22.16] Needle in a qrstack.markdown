@@ -1,0 +1,89 @@
+---
+title: "[HV22.16] Needle in a qrstack"
+date: 2022-12-16 19:14:38 +0100
+categories: HV22 CTF fun hard qr
+---
+
+Santa has lost his flag in a qrstack - it is really like finding a needle in a haystack.
+
+Can you help him find it?
+
+# Solution
+
+This one was fun, indeed! We get a 8.1M .png file with lot's of QR codes in it:
+
+![huge qr code consisting of many small qr codes](/assets/hv22/hv22_16_haystack.png)
+
+The idea is simple. Split the file into smaller chunks and let a python QR scanner handle the rest. Since the QR codes come in different sizes, we simply do that multiple times. I fired up gimp to get the coordinates of the biggest code (to remove the border) and counted the sizes of the different sized QR codes. Then I found a function online which splits the image in a grid in given size, and created a function to scan each one of them, printing the flag when found and that's it.
+
+While doing that, I noticed that pyzbar has issues with scanning a QR code without a border around it, so I made a function to create a border around each of the extracted tiles to make pyzbars job easier.
+
+In the end, I added some timing information since in the solvers chat, a war about shortest run times broke out. It even got that far that the image loading was the slowest part.
+
+Anyhow, here is my unoptimized code:
+
+```python
+import cv2
+from pyzbar.pyzbar import decode
+import numpy as np
+import time
+import math
+
+
+def img_to_grid(img, size):
+    ww = [[i.min(), i.max()+1]
+          for i in np.array_split(range(img.shape[0]), size)]
+    hh = [[i.min(), i.max()+1]
+          for i in np.array_split(range(img.shape[1]), size)]
+    grid = [img[j:jj, i:ii, :] for j, jj in ww for i, ii in hh]
+    return grid, len(ww), len(hh)
+
+
+def add_border(img, width):
+    borderImg = cv2.copyMakeBorder(img, top=width, bottom=width, left=width,
+                                   right=width, borderType=cv2.BORDER_CONSTANT, value=[255, 255, 255])
+    return borderImg
+
+
+def scan_grid(grid, max, startTime):
+    scannedTiles = 0
+    detectedCodes = 0
+    for i in range(max):
+        scannedTiles += 1
+        decoded = decode(add_border(grid[0][i], 60))
+        detectedCodes += len(decoded)
+        for code in decoded:
+            if code.data == b'Sorry, no flag here!':
+                continue
+            print(
+                f"[+] found flag {code.data} after {(time.time() - startTime):.2f} seconds")
+            cv2.imwrite('./16/solved.png', add_border(grid[0][i], 60))
+    print(
+        f"[ ] scanned {scannedTiles:6} tiles and detected {detectedCodes:5} codes for {20000 / math.sqrt(len(grid[0])):3.0f}px resolution, now at {(time.time() - startTime):6.2f} seconds")
+    return (scannedTiles, detectedCodes)
+
+
+def run():
+    start = time.time()
+    img = cv2.imread('./16/resources/haystack.png')
+    print(f"[ ] image loading took {(time.time() - start):.2f} seconds")
+    codes = img[2400:22400, 2400:22400]
+    scannedTiles = 0
+    detectedCodes = 0
+    for size in [25, 50, 100, 200, 400, 800]:
+        grid = img_to_grid(codes, size)
+        tiles, detCodes = scan_grid(grid, len(grid[0]), start)
+        scannedTiles += tiles
+        detectedCodes += detCodes
+    print(
+        f"[ ] end. scanned {scannedTiles} tiles and detected {detectedCodes} codes in {(time.time() - start):.2f} seconds in total")
+
+
+run()
+```
+
+And my timing information ;)
+
+![timing and flag](/assets/hv22/hv22_16_timingflag.png)
+
+Got the flag after just above 2 minutes and finished all QR codes () after about 6 minutes. Quite okay for my taste **HV22{1'm_y0ur_need13.}** is the flag.
