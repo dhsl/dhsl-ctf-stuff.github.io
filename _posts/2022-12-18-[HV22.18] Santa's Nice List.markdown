@@ -1,0 +1,46 @@
+---
+title: "[HV22.18] Santa's Nice List"
+date: 2022-12-18 12:37:35 +0100
+tags: HV22 CTF crypto hard zip bruteforce
+categories: HV22 hard
+sidebar:
+  nav: "hv22"
+---
+
+Santa stored this years "Nice List" in an encrypted zip archive. His mind occupied with christmas madness made him forget the password. Luckily one of the elves wrote down the SHA-1 hash of the password Santa used.
+
+`xxxxxx69792b677e3e4c7a6d78545c205c4e5e26`
+
+Can you help Santa access the list and make those kids happy?
+
+# Solution
+
+So, we got a zip file [nice-list.zip](/assets/hv22/hv22_18_nice-list.zip) which is password protected. We don't know a plaintext in it, so plaintext attacks are not feasible. Since the zip is AES encrypted (`file` returns `nice-list.zip: Zip archive data, at least v5.1 to extract, compression method=AES Encrypted`), other attacks I know are also not suited. Let's do some research.
+
+While researching, I stumbled over this interesting article called [An encrypted ZIP file can have two correct passwords — here's why](https://www.bleepingcomputer.com/news/security/an-encrypted-zip-file-can-have-two-correct-passwords-heres-why/) which uses the same preconditions and I noticed that the known bytes of the SHA-1 were all ASCII Printable.
+
+The remainder was quite straightforward. I generated a wordlist of all the possible combinations (3 printable characters + known bytes in ascii) with this (very ugly) script:
+
+```python
+import string
+
+printables = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ '
+
+hashes = []
+for i in printables:
+    for j in printables:
+        for k in printables:
+            hashes.append(
+                f"{i.encode('utf-8').hex()}{j.encode('utf-8').hex()}{k.encode('utf-8').hex()}69792b677e3e4c7a6d78545c205c4e5e26")
+
+print(len(printables))
+print(len(hashes))
+
+file = open('./wordlist.txt', 'w')
+for hash in hashes:
+    file.writelines(bytes.fromhex(hash).decode('UTF-8') + "\n")
+```
+
+The script took about 5 seconds to create a wordlist with ~857k entries.
+
+I then used john to crack the password. Extract the hash with `zip2john nice-list.zip > nice-list.hash` and crack it with `john --wordlist ./wordlist.txt nice-list.hash`. On my azure VM running Kali, this took a second and gave me the correct password `4Ltiy+g~>LzmxT\ \N^&`. I used that with `7z e nice-list.zip` (`unzip` doesn't support the zip file version) to get the flag **HV22{HAVING_FUN_WITH_CHOSEN_PREFIX_PBKDF2_HMAC_COLLISIONS_nzvwuj}**
