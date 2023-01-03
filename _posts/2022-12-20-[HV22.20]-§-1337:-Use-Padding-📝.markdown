@@ -1,0 +1,87 @@
+---
+layout: single
+title: "[HV22.20] § 1337: Use Padding 📝"
+date: 2022-12-20 15:42:35 +0100
+tags: HV22 CTF crypto hard aes python ecb
+categories: HV22 hard
+sidebar:
+  nav: "hv22"
+---
+
+Santa has written an application to encrypt some secrets he wants to hide from the outside world. Only he and his elves, who have access too all the keys used, can decrypt the messages 🔐.
+
+Santa's friends Alice and Bob have suggested that the application has a padding vulnerability❗, so Santa fixed it 🎅. This means it's not vulnerable anymore, right❗❓
+
+Santa has also written a concept sheet of the encryption process:
+![padding scheme](/assets/hv22/hv22_20_description.png)
+
+# Solution
+
+Today we got a socket and a file [santa_aes_source.py](/assets/hv22/hv22_20_santa_aes_source.py), which is runs on the socket. We assume that this is the full source and the flag is loaded from './flag.txt'. This is great, since we can simply test this locally using pwntools!
+
+Inspecting the source shows a few interesting things.
+
+1. It uses a custom pad() function
+2. It pads the msg and flag separately, concatenating them and then padding it again (shouldn't it already match?)
+3. It uses AES in mode ECB
+4. It uses a new secret for encrypting the padded msg and flag on every connection, but I can try multiple times with the same secret by sending `y\n`
+
+Looking at the pad() function first, it looks like standard zero-fill, which is totally valid AES padding. I wondered why the author implemented it manually, but left it as it is for now.
+
+Reading up on ECB ([the pycryptodome documentation](https://pycryptodome.readthedocs.io/en/latest/src/cipher/classic.html#ecb-mode) might not be the best introduction, but pointed me in the right direction), I learned that it encrypts each 16 byte block on its own, so entering the same 16 bytes twice will return two times the same ciphertext. This is interesting, because this is a clear vulnerability.
+
+Looking at the double padding we notice, that first, the msg and the flag are padded separately and then concatenated. Then, this gets `.encode()` and padded again. This is interesting, and I wonder if this has something to do with multi-byte characters. To test this, I use this:
+
+```python
+len('ä')
+> 1
+
+len('ä'.encode())
+> 2
+```
+
+Gotcha! So, by creating an input with 16 times a "good character" (1 byte), everything is fine. When I only input 15 1 byte characters and one 2 byte character, I can push flag one byte to the right, resulting in a zero padded ciphertext with only one character, which I can measure against a zero-padded input from myself. This assumes that the flag is 16 bytes.
+
+![pushing the flag into the next 16 byte block](/assets/hv22/hv22_20_push.png)
+
+So for each char, we need to test it against 95 ascii printable characters, which seems like a reasonable amount to brute force since we know the length of the flag is below 32 bytes, since the ciphertext length is that if our message is empty.
+
+I wrote a script and placed a flag.txt with an example flag next to it and tested it against the local version of the script since it's way faster than over the internet. When I got this to work, I ran it against the socket and got the flag `HV22{len()!=len()}`
+
+```python
+#!/usr/bin/env python3.11
+from pwn import *
+
+# for local testing
+# conn = process(["/opt/homebrew/bin/python3.11",
+#                "/Users/dhe/repos/HV22/20/santa_aes_source.py"], stdin=PTY, stderr=PTY)
+
+conn = remote('609ec20c-eb86-416d-8d91-8cfd81c21324.rdocker.vuln.land', 1337)
+
+found = '}'
+goodChar = 'a'  # 1 byte
+badChar = 'ä'  # 2 bytes
+round = 0
+
+while found[0] != 'H':
+    for printable in '123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ ':
+        check = printable + found + (15 - len(found)) * '0'
+        check += round * badChar + (16 - round) * goodChar
+        _ = conn.recvuntil("Enter access code:\n")
+        conn.send(f"{check}\n".encode())
+        result = conn.recvuntil("Do you want to try again [y/n]:\n")
+        result = result[0:-33]  # remove junk text
+        conn.send("y\n".encode())
+        if result[0:32] == result[-32:]:
+            print(f"FOUND ONE: {printable}")
+            found = printable + found
+            break
+        # don't really understand why it can be found here, too, but it works
+        if result[0:32] == result[-64:-32]:
+            print(f"FOUND ONE: {printable}")
+            found = printable + found
+            break
+    round += 1
+
+print(found)
+```
