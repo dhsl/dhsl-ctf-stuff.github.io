@@ -8,8 +8,6 @@ sidebar:
   nav: "hv22"
 ---
 
-# Challenge Description
-
 The elves are going web3! Again...
 
 After last years failure where everybody could enter the nice list even seconds before christmas, Santa tasked his elves months before this years event to have finally a buy-in nice list that is also secure. To get the most value out of this endavour, they also created a new crypto currency with their own chain :O The chain is called SantasShackles and the coin is called SANTA.
