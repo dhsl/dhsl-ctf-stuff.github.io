@@ -1,0 +1,30 @@
+---
+title: "[HV22.11] Santa's Screenshot Render Function"
+date: 2022-12-11 20:11:27 +0100
+tags: HV22 CTF web medium aws
+categories: HV22 medium
+sidebar:
+  nav: "hv22"
+---
+
+Santa has been screenshotting NFTs all year. Now that the price has dropped, he has resorted to screenshotting websites. It's impossible that this may pose a security risk, is it?
+
+You can find Santa's website here: https://hackvent.deathspirate.com
+
+# Solution
+
+So, we got a website, which is not running inside a docker container, which is suspicious. Looking at the website, it seems quite simple. I give it an URL, it takes a screenshot of it and returns it back to me.
+
+![website](/assets/hv22/hv22_11_website.png)
+
+I went down a few rabbit holes. First, I tried to find out which browser this is using and used websites which enumerate browser capabilities for that. Next, I tried to use some other URI prefixes like `file://` or `chrome://` to find out things, but none of them worked.
+
+Since the website (not on the screenshot, sorry) says it's proudly hosted on AWS, I thought that this might be a hint; usually, all the challenges are hosted on hacking labs docker infrastructure.
+
+The basic question was, what can be reached by this VM in AWS, what can't be reached from the web. After lots of research, I stumbled about the fact, that most cloud providers ([AWS](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html), [Azure](https://docs.microsoft.com/en-us/azure/virtual-machines/windows/instance-metadata-service?tabs=windows)) offer link local IP addresses which only the resources can interact with.
+
+Entering `http://169.254.169.254/latest/meta-data/` and ta-daa, we got something! When we explore this a bit, we find an endpoint at `http://169.254.169.254/latest/meta-data/iam/security-credentials/` which gives us a few sensitive information:
+
+![screenshot of credentials](/assets/hv22/hv22_11_token.png)
+
+Using this token, I could use the aws cli to find a secrets manager which held the flag `HV22{H0_h0_h0_H4v3_&_M3r2y-Xm45_Yarr222_<3_Pirate}`
