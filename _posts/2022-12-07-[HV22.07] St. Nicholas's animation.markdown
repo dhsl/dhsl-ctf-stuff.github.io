@@ -29,4 +29,4 @@ Micro QR has the timing information laid out around the top and left edge (assum
 
 I then used my phone to scan the QR code, but it's also completely possible to solve it using a micro qr code reader which can be found online.
 
-The flag was **HV22{b0f}**
+The flag was `HV22{b0f}`

@@ -38,4 +38,4 @@ except EOFError:
     pass
 ```
 
-This returns the flag **HV22{I_CaN_HaZ_Al_T3h_QRs_Plz}**
+This returns the flag `HV22{I_CaN_HaZ_Al_T3h_QRs_Plz}`

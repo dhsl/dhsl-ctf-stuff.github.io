@@ -69,6 +69,6 @@ The basic idea is to send the support team to their own site, grabbing their acc
 
 This is what I threw together. Basically, it creates a form which uses the XSS vulnerability in the `to` field (from and amount are irrelevant) and submits it right away. So the victims browser is redirected to the `action` value (transfer page) and the script from the `to` field gets executed. This script fetches the start screen (which displays the account number), grabs that by regex, and sends a POST to the `/transfer` endpoint, sending 100 from the support account to my target account.
 
-After waiting for a moment for the support team to access my page, I can see that my balance now is at 100$ and under Promotion, I see my flag **HV22{XSS_XSRF_TOO_MANYS_XS}**
+After waiting for a moment for the support team to access my page, I can see that my balance now is at 100$ and under Promotion, I see my flag `HV22{XSS_XSRF_TOO_MANYS_XS}`
 
 ![flag](/assets/hv22/hv22_14_flag.png)

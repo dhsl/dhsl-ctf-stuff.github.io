@@ -89,4 +89,4 @@ And my timing information ;)
 
 ![timing and flag](/assets/hv22/hv22_16_timingflag.png)
 
-Got the flag after just above 2 minutes and finished all QR codes () after about 6 minutes. Quite okay for my taste **HV22{1'm_y0ur_need13.}** is the flag.
+Got the flag after just above 2 minutes and finished all QR codes () after about 6 minutes. Quite okay for my taste `HV22{1'm_y0ur_need13.}` is the flag.

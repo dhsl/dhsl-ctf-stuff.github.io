@@ -43,6 +43,6 @@ for i, c in enumerate(correct):
 print(result)
 ```
 
-This returns the flag **HV22{nUll_bytes_st0mp_cPy7h0n}**
+This returns the flag `HV22{nUll_bytes_st0mp_cPy7h0n}`
 
 Even though I still don't understand what the 0x00 bytes are doing, besides messing up pythons error message positions and breaking the program when removed, I liked this challenge and was able to solve it quite fast / ~39 minutes after reveal.

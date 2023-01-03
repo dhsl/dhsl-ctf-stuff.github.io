@@ -52,6 +52,6 @@ Opening the decoded bytes output view shows a text, which looks like one side of
 
 ![rx good, tx not](/assets/hv22/hv22_17_rx.png)
 
-Since the hint gives us information regarding bits, parity and stop bits, I played around with that and when changing from 8N1 to 7N1, both messages were displayed correctly and I got the flag **HV22{H4ck1ng_S4nta's_3-Sleigh}**
+Since the hint gives us information regarding bits, parity and stop bits, I played around with that and when changing from 8N1 to 7N1, both messages were displayed correctly and I got the flag `HV22{H4ck1ng_S4nta's_3-Sleigh}`
 
 ![flag](/assets/hv22/hv22_17_flag.png)

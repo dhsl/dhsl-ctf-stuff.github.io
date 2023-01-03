@@ -90,6 +90,6 @@ while True:
 
 The result looks like this: ![output of the above program, showing the flag](/assets/hv22/hv22_06_input.png)
 
-The flag is **HV22{Ch41nS_ar3_Publ1C}**
+The flag is `HV22{Ch41nS_ar3_Publ1C}`
 
 I think to know there are some tools to reveal the whole input, but for me this was sufficient to get to the flag. I learned something about blockchains and how to interact with them from python. Others have solved it using metamask and remix, but I was not able to figure out these tools properly.

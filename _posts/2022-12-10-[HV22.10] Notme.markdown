@@ -41,6 +41,6 @@ Of course it was 1337...
 
 ![response](/assets/hv22/hv22_10_response.png)
 
-Anyways. It shows me the user name (and I know the password), so I logged in using that user and got the flag **HV22{Sql1_is_An_0Ld_Cr4Ft}**
+Anyways. It shows me the user name (and I know the password), so I logged in using that user and got the flag `HV22{Sql1_is_An_0Ld_Cr4Ft}`
 
 I learned that the challenge was intended to be solved by SQL injection (as the flag remarks), which I would have attempted next (probably using sqlmap for start), if there wasn't such an obvious web security issue.

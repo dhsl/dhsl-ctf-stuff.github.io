@@ -49,4 +49,4 @@ There was another interesting thing inside the strings we found in the file, so 
 
 ![content of SANTAAAAAAAA.pdf](/assets/hv22/hv22_08_pdf.png)
 
-The string `SFYyMntIT0hPK1NBTlRBK0dJVkVTK0ZMQUdTK05PVCtWSVJVU30=` in the top looks like base64 (due to the padding with `=`), so I fired up cyberchef to test that theory, which got rewarded with the flag **HV22{HOHO+SANTA+GIVES+FLAGS+NOT+VIRUS}**
+The string `SFYyMntIT0hPK1NBTlRBK0dJVkVTK0ZMQUdTK05PVCtWSVJVU30=` in the top looks like base64 (due to the padding with `=`), so I fired up cyberchef to test that theory, which got rewarded with the flag `HV22{HOHO+SANTA+GIVES+FLAGS+NOT+VIRUS}`

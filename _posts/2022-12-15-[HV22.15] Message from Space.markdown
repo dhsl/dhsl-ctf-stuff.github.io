@@ -33,6 +33,6 @@ Playing around with the decoders (you can create your own by stacking functions)
 
 ![SFY seems familiar](/assets/hv22/hv22_15_bytes.png)
 
-I just copied the bytes over to cyberchef and tried Base64 decode and voila, there is the flag **HV22{v-wish-v-g0t-b33r}**
+I just copied the bytes over to cyberchef and tried Base64 decode and voila, there is the flag `HV22{v-wish-v-g0t-b33r}`
 
 ![flag](/assets/hv22/hv22_15_flag.png)

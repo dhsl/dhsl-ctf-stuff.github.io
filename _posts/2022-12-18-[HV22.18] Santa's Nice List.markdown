@@ -43,4 +43,4 @@ for hash in hashes:
 
 The script took about 5 seconds to create a wordlist with ~857k entries.
 
-I then used john to crack the password. Extract the hash with `zip2john nice-list.zip > nice-list.hash` and crack it with `john --wordlist ./wordlist.txt nice-list.hash`. On my azure VM running Kali, this took a second and gave me the correct password `4Ltiy+g~>LzmxT\ \N^&`. I used that with `7z e nice-list.zip` (`unzip` doesn't support the zip file version) to get the flag **HV22{HAVING_FUN_WITH_CHOSEN_PREFIX_PBKDF2_HMAC_COLLISIONS_nzvwuj}**
+I then used john to crack the password. Extract the hash with `zip2john nice-list.zip > nice-list.hash` and crack it with `john --wordlist ./wordlist.txt nice-list.hash`. On my azure VM running Kali, this took a second and gave me the correct password `4Ltiy+g~>LzmxT\ \N^&`. I used that with `7z e nice-list.zip` (`unzip` doesn't support the zip file version) to get the flag `HV22{HAVING_FUN_WITH_CHOSEN_PREFIX_PBKDF2_HMAC_COLLISIONS_nzvwuj}`

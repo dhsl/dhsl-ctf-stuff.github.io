@@ -30,4 +30,4 @@ Following the HTTP stream of this, I noticed a few things, but most importantly,
 
 Not having a 3D printer around and also not knowing what the print would look like (or even if this is a valid print and compatible with the printer at all), I wondered if there are tools to do the opposite and found [GCode Viewer](https://gcode.ws) quite fast. I saved the gcode content in a file [hv22.gcode](/assets/hv22/hv22_05_hv22.gcode) and threw it at the GCode Viewer. Set to 3D it reveals the result ![picture of the 3D model used to create the gcode, showing the flag](/assets/hv22/hv22_05_gcode_analyzer.png)
 
-The flag is **HV22{this-is-a-w4ste-of-pl4stic}**
+The flag is `HV22{this-is-a-w4ste-of-pl4stic}`

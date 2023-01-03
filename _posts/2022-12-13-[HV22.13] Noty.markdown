@@ -39,6 +39,6 @@ Host: 7395944f-b303-49a5-91f7-86823f301cbe.idocker.vuln.land
 }
 ```
 
-This allows me to log in as the user `b` and reveals the flag **HV22{P0luT1on_1S_B4d_3vERyWhere}**
+This allows me to log in as the user `b` and reveals the flag `HV22{P0luT1on_1S_B4d_3vERyWhere}`
 
 ![flag](/assets/hv22/hv22_13_flag.png)
