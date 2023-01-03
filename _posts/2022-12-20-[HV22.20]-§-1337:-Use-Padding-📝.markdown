@@ -1,5 +1,4 @@
 ---
-layout: single
 title: "[HV22.20] § 1337: Use Padding 📝"
 date: 2022-12-20 15:42:35 +0100
 tags: HV22 CTF crypto hard aes python ecb
