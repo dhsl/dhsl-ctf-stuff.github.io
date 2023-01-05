@@ -1,0 +1,145 @@
+---
+title: "[HV22.24] It's about time for some RSA"
+date: 2022-12-28 00:36:21 +0100
+tags: HV22 CTF reverse engineering crypto leet
+categories: HV22 leet
+sidebar:
+  nav: "hv22"
+---
+
+Santa is giving autographs! And at the end of the signing session he'll also give out the flag! But better hurry; as Santa has lot's to do this time of year, he can only spent so much time to giving out autographs.
+
+PS: Thanks to the latest in cloning technology, there are six Santas, so up to six signing session can take place at the same time!
+
+# Solution
+
+What a challenge. We got two sources, [src.zip](/assets/hv22/hv22_24_src.zip) and [santa.zip](/assets/hv22/hv22_24_santa.zip). The first contains a docker file and some rust source which doesn't do much besides metering execution, handling santas energy and passing all input and output to a web assembly.
+
+The second file is the source for said webassembly, which was released after no one had gotten first blood for a long time on this challenge.
+
+The basic idea of the challenge is to give us n, e and the first 20 bytes of p. Then we have the opportunity to give it some input which is then signed with the private key and the signature is given back to us. Every connection uses a new p and q (and n, since this is `n = p * q`). When we don't want any more autographs (or santa runs out of energy), he reads the flag from disk (happens in src.zip), hands it to the wasm, encrypts it with the same key and gives it to us.
+
+So, the key length is not too big, but with only 20 known bytes out of 96, it's still in the 10^30s and therefore way to hard to brute force.
+
+Searching the internet for attacks on partially known p, one finds a paper from Werner Schindler, describing such an attack by measuring the timing it takes to do some extra-operations if the number is above 2p. It is split in 3 phases, but with phase 2, we should be able to retrieve the bits we need to use a different attack called Coppersmith.
+
+The problem is, that the string we input gets scrambled by a function called hash() in the wasm, so we need to reverse that process, so the sign gets the input like we intended it to. The reversed function looks like this in python:
+
+```python
+def changeEndianness4(value):
+    return int.from_bytes(value.to_bytes(4, byteorder='big'), byteorder='little')
+
+def genPayload(hex_msg):
+    segs = [[], [], [], [], [], [], [], [], []]
+    mm = [0]*9*8
+    for i in range(0, 32):
+        if hex_msg == 0:
+            break
+        e2 = hex_msg & 0xFFFFFFFF
+        e1 = (hex_msg >> 32) & 0xFFFFFFFF
+        data1 = changeEndianness4(
+            (changeEndianness4(e2) - changeEndianness4(e1)) & 0xFFFFFFFF)
+        hex_msg = hex_msg >> 64
+        data2 = changeEndianness4(
+            (0x100000000 + changeEndianness4(e1) - changeEndianness4(data1)) & 0xFFFFFFFF)
+        data1 = data1.to_bytes(4, byteorder='little')
+        data2 = data2.to_bytes(4, byteorder='little')
+        for j in range(0, 4):
+            mm[9*4 - j*9 - i - 1] = data1[j]
+            mm[9*8 - j*9 - i - 1] = data2[j]
+    msgs = bytes(mm)
+    return msgs.hex().encode('ascii')
+```
+
+After having pain with non-deterministic energy consumption, I noticed that it get's deterministic when run in docker, so I used that instead.
+
+I created a function to get a signature and the energy consumption from it and added a simple cache to T() to avoid checking the same input multiple times since it will always return the same value.
+
+```python
+def getSignature(input):
+    t.conn.recvuntil(b'yN]\n')
+    t.conn.sendline(b'y')
+    t.conn.recvuntil(b'name for the autograph?\n')
+    t.conn.sendline(input)
+    t.conn.recvuntil(b'autograph: ')
+    autograph = t.conn.recvline(keepends=False)
+    t.conn.recvuntil(b'has ')
+    energy = t.conn.recvuntil(b' energy')[:-7]
+    return [autograph, int(energy)]
+
+# cache this to not measure the same timing twice. It's deterministic anyways, so this halves the number of timings.
+@lru_cache
+def T(input):
+    updated_energy = getSignature(genPayload(input))[1]
+    used_energy = t.energy - updated_energy
+    t.energy = updated_energy
+    return used_energy
+```
+
+Schindlers attack basically assumes that `p_min < p < p_max` and since we knew the 160 MSB of p, we could just fill p_min with 0 and p_max with 1. Since it should be an integer multiple of p, I used this
+
+```python
+p_min = 2 * (int(p_str, 16) << 224)
+p_max = 2 * ((int(p_str, 16) + 1) << 224)
+```
+
+Then Schindler slices this in the middle and uses the timing attack to find out if p (or 2p in our case) is in the lower or upper half. This is done repeatedly and by halving it, we basically get the next bit of our p. This is error-prone and Schindler uses multiple measurements with a rolling window until one of tha halves has 7 positives and then goes further.
+
+Comparing the measurements didn't yield results, so I figured I had to implement the more complex logic to calculate the real number of operations like this. It returns `True` if 2p is in this range, and `False` if it's not.
+
+```python
+def is_in(left, right):
+    r = pow(2, 384)
+    # good enough by ice, sqrt(n/R^2) = sqrt(2**768/2**384**2) = sqrt(1) = 1
+    beta = 1
+    b = 4  # source code somehow, 4 bit window
+    c_ER = 384/64 * 2 * 0x20  # extra reductions source code
+    N = 7  # should be enough for uncertainty
+    case_A = 0
+    not_case_A = 0
+    offset = 0
+    while True:
+        diff = T(right + offset) - T(left + offset)
+        if diff > - 0.25 * c_ER * beta * (math.log2(t.n) / (b * pow(2, (b + 1))) + pow(2, b) - 3):
+            case_A += 1
+        else:
+            not_case_A += 1
+        offset += 1
+        if (case_A - not_case_A >= N):
+            return False
+        elif (not_case_A - case_A >= N):
+            return True
+```
+
+Then to implement phase 2, I implemented it with recursion like this:
+
+```python
+def phase2(left, right):
+    while True:
+        print(f"checking betwee {hex(left)} and {hex(right)}")
+        mid = (left + right) // 2
+        if is_in(left, mid):
+            return phase2(left, mid)
+        elif is_in(mid, right):
+            return phase2(mid, right)
+        else:  # not between left / right, so last one was an error most probably. Going back doesn't help, since I would need to move the window differentlys
+            return [left, right]
+```
+
+This is still quite fragile, since sometimes it goes down the wrong path and can't recover from it. I ran it multiple times until I got more than half of the bytes, dropped the last few bits and pushed it in an Coppersmith solver.
+
+I entered
+
+```
+N = 0xa70a9a88b1d7252b08a1474ea46d0ce5cc008432023fedc368b9fb461e6125ccc73faa0ae8531c541a48321514145d25e4ac770d857a27d3891f039bbb27c42847820a14f44c8202a0f3fd1c3ed11b0fbb4433e05f5021dbd803f9809cab3a83
+p = 0xd5823977855a6e8632e886ed052201c57968d589011e0551d2375e0c0000000000000000000000000000000000000000
+```
+
+and got out
+
+```
+p = 0xd5823977855a6e8632e886ed052201c57968d589011e0551d2375e0cd7fc60aad03b9166e0c2731074542cbd8226bb23
+q = 0xc848fa9bda4fd5076b7192048122ef280af14f485762c00a7130f8df94284f3653983e853fd29d523f17aef66301a921
+```
+
+Which allowed me to decipher the flag `HV22{S4n74s_t1m3_i5_up0n_u5!}`
