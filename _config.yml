@@ -21,11 +21,9 @@
 title: dhsl's small blog
 subtitle: some ctf stuff
 repository: "dhsl/dhsl.github.io"
-email: dhsl+githubpages@is-bored.de
+email: daniel@is-bored.de
 description: >- # this means to ignore newlines until "baseurl:"
-  Write an awesome description for your new site here. You can edit this
-  line in _config.yml. It will appear in your document head meta (for
-  Google search results) and in your feed.xml site description.
+  Writeups for CTF challenges and whatever else I decide to do here
 baseurl: "/" # the subpath of your site, e.g. /blog
 url: "https://dhsl.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: ""
@@ -48,8 +46,8 @@ defaults:
 author:
   name: "Daniel Henschel"
   avatar: "/assets/images/bio-photo.jpg"
-  bio: "My awesome biography constrained to a sentence or two goes here."
-  location: "Somewhere, USA"
+  bio: "Random IT Solution Architect doing CTF challenges from time to time."
+  location: "Germany"
 
 # Build settings
 remote_theme: "mmistakes/minimal-mistakes@4.24.0"
