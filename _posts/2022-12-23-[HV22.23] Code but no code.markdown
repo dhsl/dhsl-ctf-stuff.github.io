@@ -19,7 +19,7 @@ So, we got a website again, giving us the source code of two contracts ([Setup.s
 
 In the beginning, we need to be able to interact with both contracts. To do this, we use web3.py again and do some boilerplate:
 
-```pyton
+```python
 #!/usr/bin/env python3
 from web3 import Web3
 import solcx
