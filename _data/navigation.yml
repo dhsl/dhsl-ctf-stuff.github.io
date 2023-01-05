@@ -2,6 +2,8 @@ main:
   - title: "HACKvent 2022"
     url: "/hv22"
 hv22:
+  - title: Intro
+    url: "/hv22"
   - title: Easy
     children:
       - title: "[HV22.01] QR means quick reactions, right?"
