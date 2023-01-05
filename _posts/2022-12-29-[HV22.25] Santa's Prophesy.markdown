@@ -1,0 +1,82 @@
+---
+title: "[HV22.25] Santa's Prophesy"
+date: 2022-12-29 15:03:30 +0100
+tags: HV22 CTF forensic programming web ai hard
+categories: HV22 hard
+sidebar:
+  nav: "hv22"
+---
+
+Based on an old fairytale from Kobeliaky, Santa can provide more than presents. He can show you the future!
+
+# Solution
+
+When I did this challenge, we believe it was broken since the training data was wrong. Most people solved this challenge by accident, so did I.
+
+We got a website:
+
+![website](/assets/hv22/hv22_25_website.png)
+
+Not much to see in there, besides some strange CSV file appended to the image, which was the broken training data. Let's enumerate a bit. I used dirb with the common.txt and found /upload. This looks promising.
+
+![upload function](/assets/hv22/hv22_25_upload.png)
+
+The text and the loading looks like it tries to load a pytorch model (in jit.script) and run over some data. Since I didn't understand the training data at all, my first step was to get a model in a format they expect and can use. This model should do nothing for now but simply return the input value. The code I ended up with looks like this:
+
+```python
+import torch
+import requests
+
+uri = '77de8133-abbc-4b1c-8753-d76f5f549668.idocker.vuln.land'
+uri = f"https://{uri}/upload"
+
+
+class NeuralNetwork(torch.nn.Module):
+    def forward(self, x):
+        return x
+
+
+model = NeuralNetwork()
+jitModel = torch.jit.script(model)
+torch.jit.save(jitModel, './25/model.pt')
+
+files = [
+    ('file', ('model.pt', open('./25/model.pt', 'rb'), 'application/octet-stream'))]
+res = requests.post(url=uri,
+                    files=files)
+
+print(res.content)
+```
+
+Yes, this also implements the upload process and gives back the message from the webserver.
+
+Since I knew other people solved it by accident without GPU training of the model, I poked around. I used the documentation from pytorch to learn about Tensors and this Module I was building, and decided to try to leak some information. I tried lot's of functions inside forward(), but none of them worked.
+
+After being hinted that it's one command, I just threw different commands at it and torch.atan(x) was the first one that worked.
+
+```python
+import torch
+import requests
+
+uri = '77de8133-abbc-4b1c-8753-d76f5f549668.idocker.vuln.land'
+uri = f"https://{uri}/upload"
+
+
+class NeuralNetwork(torch.nn.Module):
+    def forward(self, x):
+        return torch.atan(x)
+
+
+model = NeuralNetwork()
+jitModel = torch.jit.script(model)
+torch.jit.save(jitModel, './25/model.pt')
+
+files = [
+    ('file', ('model.pt', open('./25/model.pt', 'rb'), 'application/octet-stream'))]
+res = requests.post(url=uri,
+                    files=files)
+
+print(res.content)
+```
+
+This gave me the flag `HV22{AA21B6AB-4520-4AD2-8016-4A9F2C371E6E}`
