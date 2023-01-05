@@ -1,0 +1,205 @@
+---
+title: "[HV22.22] Santa's UNO flag decrypt0r"
+date: 2022-12-23 09:02:37 +0100
+tags: HV22 CTF reverse engineering leet arduino
+categories: HV22 leet
+sidebar:
+  nav: "hv22"
+---
+
+The elves made Santa a fancy present for this Christmas season. He received a fancy new Arduino where his elves encoded a little secret for him. However, Santa is super stressed out at the moment, as the children's presents have to be sent out soon. Hence, he forgot the login, the elves told him earlier. Can you help Santa recover the login and retrieve the secret the elves sent him?
+
+# Solution
+
+So, we got a file [unoflagdecrypor.elf](/assets/hv22/hv22_22_unoflagdecryptor.elf) to download. `file` tells us, it's for an `Atmel AVR 8-bit`, so let's play around a bit. `stings` doesn't give us much, so let's try to run this thing. After a bit of research, I found that [qemu](https://qemu.readthedocs.io/en/latest/system/target-avr.html) is able to run this binary and let me use telnet to connect to the console. Of course, gdb is also possible, but I'll try to do it static first.
+
+![connected to the cli](/assets/hv22/hv22_22_connected.png)
+
+So far, so good. It asks me for a username:password combination and gives me an error, not allowing me to try a second time. Let's fire up ghidra. Great, only one `main()` function, but what a mess in decompiled code. After staring at it for a long time, I understand that the interesting stuff starts at 0x311, which is this pseudo C:
+
+```c
+do {
+    X = R11R10 + 1;
+    R11R10 = X;
+    X = R9R8 + 1;
+    R5R4._1_1_ = *R9R8;
+    R5R4 = R5R4 & 0xff | (uint)R5R4._1_1_ << 8;
+    R9R8 = X;
+    R25R24 = (char *)R19R18;
+    R23R22 = (int)R15R14;
+    *(undefined3 *)(uVar5 - 2) = 0x31b;
+    __divmodhi4((int)R25R24,R23R22);
+    X._0_1_ = (byte)R25R24;
+    X = (byte *)CONCAT11((char)((uint)R25R24 >> 8) - (((byte)X < 0xb0) + -3),(byte)X + 0x50);
+    X._0_1_ = *X;
+    X = (byte *)CONCAT11(-(((byte)X < 0xcd) + -2),(byte)X + 0x33);
+    X = (byte *)((int)X + 0x25);
+    R25R24._0_1_ = *X;
+    R20 = R20 ^ (byte)R25R24;
+    if (R20 == R5R4._1_1_) {
+        Z = (byte *)((int)Z + 1);
+    }
+    bVar1 = (char)R19R18 + 1;
+    cVar2 = (char)((uint)R19R18 >> 8) - (((char)R19R18 != -1) + -1);
+    R19R18 = CONCAT11(cVar2,bVar1);
+} while (bVar1 != 0x21 || cVar2 != (byte)(R1 + (bVar1 < 0x21)));
+```
+
+I reimplemented basically that in python to get to the flag. To do that, I must understand what's going on here (it was actually easier to use the disassembly for that).
+
+![relevant disassembly](/assets/hv22/hv22_22_disassembly.png)
+
+So, let's try to understand what the different registers do. To do that, we need to learn about the register layouts and op codes of this processor. For the registers and CPU information, I used the [ATMEL 8-BIT DATASHEET](https://content.instructables.com/FHH/Q63Y/I301K82A/FHHQ63YI301K82A.pdf), and for the opcodes, I found [AVR Instruction Set Manual](http://ww1.microchip.com/downloads/en/devicedoc/atmel-0856-avr-instruction-set-manual.pdf).
+
+What's important, is that this CPU uses 8 bit registers, but they mostly are referred to `R11R10`, which combines the two registers. R26 to R31 are usually referred to as Xlo and Xhi (or X for both). This results in strange opcodes like `subi Xlo,0xb0 / sbci Xhi,0xfd`, which simply substracts `0xfdb0` from X for example.
+
+Reverse engineering that, we learn that R18 is basically used as an index of a loop, which is as long as the data, R5 points to. R5 is a section in memory starting at 0x112. I just simplified that in python to about this:
+
+```python
+r5 = b'\x80\xd7\x46\x3c\x67\x7b\x95\x51\x6e\x67\x66\x90\x35\x9b\xd7\x5a\x2c\x65\x71\x98\x6b\x66\x57\x73\x87\x59\x97\xcc\x09\x69\x27\x7b\xd5'
+
+for r18 in range(len(r5)):  # ~0x311
+```
+
+Next, starting at 0x316, there is some movement of register contents and a call to a `__divmodhi4` function. Which basically does `r24 = r18 % r14` for python. We have to find out what R14 holds, though. in 0x2d8 / 0x2d9 we see, it's simply 0xd, so we can add this to our python code:
+
+```python
+r5 = b'\x80\xd7\x46\x3c\x67\x7b\x95\x51\x6e\x67\x66\x90\x35\x9b\xd7\x5a\x2c\x65\x71\x98\x6b\x66\x57\x73\x87\x59\x97\xcc\x09\x69\x27\x7b\xd5'
+r14 = 0xd  # ~ 0x2d8
+
+for r18 in range(len(r5)):  # ~0x311
+    r24 = r18 % r14  # ~0x319
+```
+
+Next, starting at 0x31b, it loads R24 into X, substracting 0xfdb0 from X (remember that it's truncating it since it only has 16 bits available) and then loading something from memory. Since we know, r24 can only be between 0x0 and 0xd, it's a small area of memory it can be from. I manually did the calculation and simplified that bit to this:
+
+```python
+r5 = b'\x80\xd7\x46\x3c\x67\x7b\x95\x51\x6e\x67\x66\x90\x35\x9b\xd7\x5a\x2c\x65\x71\x98\x6b\x66\x57\x73\x87\x59\x97\xcc\x09\x69\x27\x7b\xd5'
+sec = b'\x05\x5c\x03\x07\x0d\x00\x3c\xc8\x2b\x14\x43\x31\xa5'
+r14 = 0xd  # ~ 0x2d8
+
+for r18 in range(len(r5)):  # ~0x311
+    r24 = r18 % r14  # ~0x319
+    # the commented out lines grab something from sec memory (starting at 0x250). I simplified that.
+    # x = r24 # 0x31b
+    # x = int(bin(x - 0xfdb0 + (1<<32))[-16:], 2) # 0x31c, 0x31d
+    x = sec[r24] # 0x31e
+```
+
+Next, starting in 0x320, it substracts 0xfecd from X and afterwards (this is important due to register size) adds 0x25 to it.
+
+```python
+r5 = b'\x80\xd7\x46\x3c\x67\x7b\x95\x51\x6e\x67\x66\x90\x35\x9b\xd7\x5a\x2c\x65\x71\x98\x6b\x66\x57\x73\x87\x59\x97\xcc\x09\x69\x27\x7b\xd5'
+sec = b'\x05\x5c\x03\x07\x0d\x00\x3c\xc8\x2b\x14\x43\x31\xa5'
+r14 = 0xd  # ~ 0x2d8
+
+for r18 in range(len(r5)):  # ~0x311
+    r24 = r18 % r14  # ~0x319
+    # the commented out lines grab something from sec memory (starting at 0x250). I simplified that.
+    # x = r24 # 0x31b
+    # x = int(bin(x - 0xfdb0 + (1<<32))[-16:], 2) # 0x31c, 0x31d
+    x = sec[r24] # 0x31e
+    x = int(bin(x - 0xfecd + (1 << 32))[-16:], 2)  # 0x320, 0x321
+    x += 0x25  # 0x322
+```
+
+Then, in 0x323 it loads a byte from memory, which X is now pointing at. Since I didn't want to copy too many bytes, I just got all the X values and manually set R24 to the value at X. Not that proud of this, but it gets the job done:
+
+```python
+r5 = b'\x80\xd7\x46\x3c\x67\x7b\x95\x51\x6e\x67\x66\x90\x35\x9b\xd7\x5a\x2c\x65\x71\x98\x6b\x66\x57\x73\x87\x59\x97\xcc\x09\x69\x27\x7b\xd5'
+sec = b'\x05\x5c\x03\x07\x0d\x00\x3c\xc8\x2b\x14\x43\x31\xa5'
+r14 = 0xd  # ~ 0x2d8
+
+for r18 in range(len(r5)):  # ~0x311
+    r24 = r18 % r14  # ~0x319
+    # the commented out lines grab something from sec memory (starting at 0x250). I simplified that.
+    # x = r24 # 0x31b
+    # x = int(bin(x - 0xfdb0 + (1<<32))[-16:], 2) # 0x31c, 0x31d
+    x = sec[r24] # 0x31e
+    x = int(bin(x - 0xfecd + (1 << 32))[-16:], 2)  # 0x320, 0x321
+    x += 0x25  # 0x322
+    match x:  # load from memory 0x323
+        case 0x15d:
+            r24 = 0xf3
+        case 0x1b4:
+            r24 = 0xb6
+        case 0x15b:
+            r24 = 0x28
+        case 0x15f:
+            r24 = 0x48
+        case 0x165:
+            r24 = 0x06
+        case 0x158:
+            r24 = 0x41
+        case 0x194:
+            r24 = 0xfc
+        case 0x220:
+            r24 = 0x0e
+        case 0x183:
+            r24 = 0x02
+        case 0x16c:
+            r24 = 0x08
+        case 0x19b:
+            r24 = 0x10
+        case 0x189:
+            r24 = 0xf5
+        case 0x1fd:
+            r24 = 0x6a
+```
+
+Last, it would XOR R20 with R24 and check if it's valid against R5, but since XOR is reversible, we simply XOR R24 with R5 and get what should be in R20:
+
+```python
+r5 = b'\x80\xd7\x46\x3c\x67\x7b\x95\x51\x6e\x67\x66\x90\x35\x9b\xd7\x5a\x2c\x65\x71\x98\x6b\x66\x57\x73\x87\x59\x97\xcc\x09\x69\x27\x7b\xd5'
+sec = b'\x05\x5c\x03\x07\x0d\x00\x3c\xc8\x2b\x14\x43\x31\xa5'
+r14 = 0xd  # ~ 0x2d8
+# r20 = 0 # assumption since not called before
+result = ''
+
+for r18 in range(len(r5)):  # ~0x311
+    r24 = r18 % r14  # ~0x319
+    # the commented out lines grab something from sec memory (starting at 0x250). I simplified that.
+    # x = r24 # 0x31b
+    # x = int(bin(x - 0xfdb0 + (1<<32))[-16:], 2) # 0x31c, 0x31d
+    x = sec[r24] # 0x31e
+    x = int(bin(x - 0xfecd + (1 << 32))[-16:], 2)  # 0x320, 0x321
+    x += 0x25  # 0x322
+    match x:  # load from memory 0x323
+        case 0x15d:
+            r24 = 0xf3
+        case 0x1b4:
+            r24 = 0xb6
+        case 0x15b:
+            r24 = 0x28
+        case 0x15f:
+            r24 = 0x48
+        case 0x165:
+            r24 = 0x06
+        case 0x158:
+            r24 = 0x41
+        case 0x194:
+            r24 = 0xfc
+        case 0x220:
+            r24 = 0x0e
+        case 0x183:
+            r24 = 0x02
+        case 0x16c:
+            r24 = 0x08
+        case 0x19b:
+            r24 = 0x10
+        case 0x189:
+            r24 = 0xf5
+        case 0x1fd:
+            r24 = 0x6a
+    # r20 = r20 ^ r24 # 0x324
+    # here it would check if it's valid against r5, we just invert it, 0x325
+    result += chr(r24 ^ r5[r18])
+
+print(result)
+```
+
+This gives us the username and password: `santa:i_love_hardc0ded_cr3dz!!!:)`. Let's throw it at the running program:
+
+![flag](/assets/hv22/hv22_22_flag.png)
+
+This gives us the flag `HV22{n1c3_r3v3r51n6_5k1llz_u_g07}`
